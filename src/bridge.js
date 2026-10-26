@@ -8541,13 +8541,58 @@ ${formatGuestChatLines(key, fresh, 9000)}
   }
 
   let companionTickBusy=false;
+  // 主动分享代发（桥接代发）：编排模式下主动分享会话没有任何工具，
+  // 它只能把要分享的话写成回合正文；由桥接在回合结束后替它发送。
+  let companionSettleBusy=false;
+  function harvestCompanionText(rows,sinceMs){
+    let start=-1;
+    for(let i=0;i<rows.length;i++){if(rows[i].type==="turn/start"&&Number(rows[i].time||0)>=sinceMs-5000)start=i;}
+    if(start<0)return "";
+    const parts=[];
+    for(let i=start+1;i<rows.length;i++){
+      const r=rows[i];
+      if(r.type==="turn/end")break;
+      if(r.type!=="assistant/message")continue;
+      const content=r.data?.message?.content;
+      if(!Array.isArray(content))continue;
+      for(const part of content)if(part?.type==="text"&&part.text)parts.push(String(part.text));
+    }
+    return parts.join("\n").trim();
+  }
+  async function deliverCompanionShare(pending,text){
+    const key=`private:${cfg.ownerQQ}`;
+    let body=String(text??"").trim();
+    if(!body||isSilentMarker(body)){log("主动分享：本轮不分享（静默）");return;}
+    body=String(await handleCompanionActions(key,body,{sessionId:pending.sessionId})??"").trim();
+    if(!body||isSilentMarker(body)){log("主动分享：本轮只有媒体动作，无正文代发");return;}
+    const ok=await auditAndSend(key,body);
+    if(ok){noteOwnerChat("out",`（你主动发的分享）${body}`,{kind:"companion_share"});noteOutsideShare(key,body);log(`主动分享已由桥接代发（${body.length} 字）`);}
+    else log("主动分享代发未成功（发送失败或被安全策略拦截）");
+  }
+  async function settleCompanionPending(runtime){
+    const pending=runtime.pending;if(!pending||companionSettleBusy)return;
+    companionSettleBusy=true;
+    try{
+      const rows=readSessionLogLines(pending.sessionId);if(!rows)return;
+      const end=rows.filter(x=>x.type==="turn/start"||x.type==="turn/end").at(-1);
+      const finished=end?.type==="turn/end"&&Number(end.time)>=Number(pending.at);
+      if(!finished){
+        if(Date.now()-Number(pending.at)>30*60000){delete runtime.pending;atomicWriteJson(path.join(STATE_DIR,"companion-runtime.json"),runtime);log("主动分享：上一回合超时未结束，已放弃等待");}
+        return;
+      }
+      delete runtime.pending;atomicWriteJson(path.join(STATE_DIR,"companion-runtime.json"),runtime);
+      if(pending.viaBridge!==true)return;
+      await deliverCompanionShare(pending,harvestCompanionText(rows,Number(pending.at)));
+    }catch(e){log("主动分享代发异常："+scrubPrivate(e.message));}
+    finally{companionSettleBusy=false;}
+  }
   async function companionTick({dryRun=false}={}){
     const schedule=readJsonSafe(path.join(STATE_DIR,'companion-schedule.json'),null),key=`private:${cfg.ownerQQ}`;
+    const runtime=readJsonSafe(path.join(STATE_DIR,'companion-runtime.json'),{});
+    if(runtime.pending&&!dryRun)await settleCompanionPending(runtime);
     const preliminary=companionDecision({enabled:schedule?.enabled===true});if(!preliminary.eligible)return {ok:true,dryRun,skipped:true,...preliminary,newModelCalls:0};
     if(invocations.data[invocations.key('companion_share',key,preliminary.slot)])return {ok:true,dryRun,skipped:true,reason:'occurrence_already_processed',newModelCalls:0};
     const lastShare=Math.max(0,...ownerChat.filter(x=>x.dir==='out'&&x.text.startsWith('（你主动发的分享）')).map(x=>x.at),...Object.values(mediaJobs.data).filter(j=>j.character&&j.direct===false&&j.status==='completed').map(j=>j.doneAt||0));
-    const runtime=readJsonSafe(path.join(STATE_DIR,'companion-runtime.json'),{});
-    if(runtime.pending){const rows=readSessionLogLines(runtime.pending.sessionId);const end=rows?.filter(x=>['turn/start','turn/end'].includes(x.type)).at(-1);if(end?.type==='turn/end'&&Number(end.time)>=Number(runtime.pending.at)){delete runtime.pending;atomicWriteJson(path.join(STATE_DIR,'companion-runtime.json'),runtime);}}
     const decision=companionDecision({enabled:schedule?.enabled===true,ownerQuiet:state.ownerQuiet,busy:!dshReady||chatTurnRunning(key)||!!taskProgress.current(key)||companionTickBusy,lastSharedAt:lastShare,pending:!!runtime.pending});
     if(dryRun||!decision.eligible)return {ok:true,dryRun,skipped:!decision.eligible,...decision,newModelCalls:0};
     companionTickBusy=true;
@@ -8555,8 +8600,8 @@ ${formatGuestChatLines(key, fresh, 9000)}
       const result=await invocations.run('companion_share',key,decision.slot,async()=>{
         const sessionId=schedule.sessionId;if(!sessionId)throw Error('主动分享没有已迁移会话');
         await pinInternalTitle(sessionId,'小鲸鱼空闲时间');await ensureChatModel(sessionId);internalPurposes.set(sessionId,'companion_share');api.events.follow(sessionId);
-        const prompt=temporal.context(key,{history:ownerChat})+'\n'+schedule.prompt+'\n【本轮已核实近况】'+JSON.stringify({recentMessages:ownerChat.filter(x=>x.dir==='out').slice(-6).map(({at,text})=>({at:beijingTime(at),text})),recentLife:(caps.data.lifeHistory||[]).slice(-2).map(x=>historicalScene(x.scene,x.at,x.deliveredAt))})+'；状态已随本轮提供，无需为读取同一份状态重复查接口。';
-        runtime.pending={sessionId,slot:decision.slot,at:Date.now()};atomicWriteJson(path.join(STATE_DIR,'companion-runtime.json'),runtime);
+        const prompt=temporal.context(key,{history:ownerChat})+'\n'+schedule.prompt+'\n【本轮已核实近况】'+JSON.stringify({recentMessages:ownerChat.filter(x=>x.dir==='out').slice(-6).map(({at,text})=>({at:beijingTime(at),text})),recentLife:(caps.data.lifeHistory||[]).slice(-2).map(x=>historicalScene(x.scene,x.at,x.deliveredAt))})+'；状态已随本轮提供，无需为读取同一份状态重复查接口。'+'\n【本轮怎么发（桥接代发，覆盖前面的旧说明）】你现在没有任何工具可用，不用调用任何接口，也不要在正文里提工具或接口。想分享，就把要发给机主的话直接写成本轮回复正文，桥接会替你发到他的 QQ；要配照片就在正文里写【发照片：场景描述】，发表情写【发表情包：含义】。不想发就只回复 [SILENT]，不要附带解释或总结——多写出来的内容同样会被发给他。';
+        runtime.pending={sessionId,slot:decision.slot,at:Date.now(),viaBridge:true};atomicWriteJson(path.join(STATE_DIR,'companion-runtime.json'),runtime);
         const accepted=await api.sessions.prompt({sessionId,mode:'queue',content:[{type:'text',text:prompt}]});if(!accepted.result.ok)unwrap(accepted,'companion prompt');
         return {accepted:true,sessionId,slot:decision.slot};
       },{metadata:{provider:cfg.dsh.provider,model:cfg.dsh.model,trigger:'daylight_companion_tick'}});
