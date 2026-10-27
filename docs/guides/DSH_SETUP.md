@@ -10,7 +10,7 @@
 
    ```bash
    git clone https://github.com/binlin0120/dsh-qq-bridge.git
-   cd qq-bridge
+   cd dsh-qq-bridge
    ```
 
    > 默认分支 `main` 即当前版本 **v0.1.5**（适配 DSH 0.1.5-rc.1），clone 下来无需切换分支。

@@ -1,3 +1,4 @@
+import * as chainLib from '../src/short-chain.mjs';
 import {stopIntent,taskCanDeliver} from '../src/stop-delivery.mjs';
 import {OwnerMaintenanceBroker} from '../src/owner-maintenance.mjs';
 import {Orchestrator} from '../src/orchestrator.mjs';
@@ -161,7 +162,7 @@ export async function bridgeHarness({ config = {}, savedState, files = {}, globa
     buildInboundNote, extractFaceImage,
     tickReminders, reminderPermits,
     testMemo(result) { api.sessions.prompt = async(params)=> { const waiters=learnerWaiters.get(params.sessionId); if(waiters?.length) { const w=waiters.shift();clearTimeout(w.timer); if(typeof result==='object' && result?.message) w.reject(result);else w.resolve(result); } return {result:{ok:true,value:{}}}; }; },
-    taskProgress,orchestrator,handleUrgentStop,deliverTaskResult,sendEpochs,applyOrchestrationRoster,applyOwnerMaintenance,applyOwnerMaintenanceControl,observeOrchestratorFrame,applyOrchestrationActions,runServiceVoicePrompt,sayBridge,pendingResetMeaning,readConversationPersona, splitChatSegments, sendToQQ, sendStickerV2, handleIncoming, startConsoleServer, cfg, state, api, promptQueues,
+    shortChain,modelLanes,taskProgress,orchestrator,handleUrgentStop,deliverTaskResult,sendEpochs,applyOrchestrationRoster,applyOwnerMaintenance,applyOwnerMaintenanceControl,observeOrchestratorFrame,applyOrchestrationActions,runServiceVoicePrompt,sayBridge,pendingResetMeaning,readConversationPersona, splitChatSegments, sendToQQ, sendStickerV2, handleIncoming, startConsoleServer, cfg, state, api, promptQueues,
     getSocialV2State, appendSocialV2Message, recordSentMessagesV2,
     buildWakePromptV2, buildWakeSnapshotV2, sendWakePromptV2, socialV2,
     refreshMode, modeAllowed, trackTurnEvent, replayPendingWakeReasonsV2,
@@ -204,7 +205,7 @@ export async function bridgeHarness({ config = {}, savedState, files = {}, globa
     discoverDshLaunchToken: () => '', unwrap, createTurnCollector,
     ...markdown, ...sensitive, ...wait, ...safeFetch, ...forward, ...slang, ...sticker,
     ...modelPrices, ...tokenLedger, ...voiceLib, ...stateAcl, ...presetPrompt, ...reliability, ...roleCard, ...capabilities, ...memoryBookLib, ...groupContextLib, ...taskProgressLib, ...imageDownloadLib, ...imageResultLib, ...progressNarratorLib, ...outboxLib, ...memoryQueueLib, ...temporalLib, ...invocationLib, ...parallelDownloadLib, ...companionGateLib, ...socialPublishingLib,
-    Orchestrator,OwnerMaintenanceBroker,stopIntent,taskCanDeliver,parseAgentObject,classifyModelError,
+    ...chainLib,Orchestrator,OwnerMaintenanceBroker,stopIntent,taskCanDeliver,parseAgentObject,classifyModelError,
     ...serviceVoiceLib,composeServiceReply:async ({facts})=>facts.text,
     TaskProgress: class extends taskProgressLib.TaskProgress { constructor(file,options){super(file,{...options,render:async(j,facts)=>j.stage||JSON.stringify(facts)});} },
     // ACL 收紧会 spawn icacls 去改**真实**文件系统；测试不该做这件事（同理见下面的

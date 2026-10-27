@@ -8,6 +8,22 @@
 
 **一句话定位：把 QQ 变成 DSH（DeepSeek Harness）智能体的前台——你在 QQ 里说话、派活，DSH 在机器上真正干活，结果再回到 QQ。**
 
+## 一键部署（别人上手最短路径）
+
+别人拿到这个仓库，按下面 6 步就能跑起来，完整说明见下文“完整启动流程（从零开始）”和 [docs/guides/DSH_SETUP.md](docs/guides/DSH_SETUP.md)：
+
+```bash
+git clone https://github.com/binlin0120/dsh-qq-bridge.git
+cd dsh-qq-bridge
+npm install
+cp config.example.json config.json   # Windows 用 copy config.example.json config.json
+# 编辑 config.json：填 snowluma 的 wsUrl / httpUrl / accessToken，以及 allow.private / allow.groups（你自己的 QQ 号 / 群号）
+node scripts/setup-dsh.mjs   # 装 DSH 端 preset + MCP，装完必须重启 DSH
+npm start                    # Windows 想崩溃自动重启，改双击 start.bat
+```
+
+> 注意：roles/小鲸鱼.md 是本仓库自带的示例人设，里面写了示例用的名字和称呼；别人部署时请把人设里的名字、称呼换成自己的，不要直接用示例人设里的名字。同样，preset 里的工作目录示例是 ~/qq-bridge，部署在别的路径时请按实际路径改。
+
 > **与上游的关系**：本项目是 **DSH-QQ Bridge（DSH-QQ 任务桥）**，基于开源项目 [qq-bridge](https://github.com/Derpyu520/qq-bridge)（作者 Derpyu520，MIT 许可证）二次开发的个人维护版本，基线为上游 v0.2.0-r4。在上游基础上强化了：多任务编排（把活拆成目标分步执行）、**口语急停**（自然说法即可叫停并作废未发出的排队消息）、进度播报、投递守卫与任务状态管理。原作者版权与 LICENSE 保留在 [LICENSE](LICENSE) 中。
 
 ## 项目流程（一遍看懂）
@@ -181,7 +197,7 @@ node scripts/setup-dsh.mjs
 2. **装桥接并复制配置**
    ```bash
    git clone https://github.com/binlin0120/dsh-qq-bridge.git
-   cd qq-bridge
+   cd dsh-qq-bridge
    npm install
    ```
    Windows CMD 用 `copy config.example.json config.json`，其他平台用 `cp config.example.json config.json`。
