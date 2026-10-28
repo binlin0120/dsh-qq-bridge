@@ -92,7 +92,7 @@ SnowLuma 是专有组件，其许可不允许被打包分发，本项目只连�
 2. **控制台**：打开 `http://127.0.0.1:3100`（令牌访问）→「人格与角色」页，列表点选即可载入查看 / 编辑，支持新建、保存修改、改名（自动重命名文件）、另存为副本、删除；超过注入上限或含一代专用指令会实时提示。
 3. **QQ 里切**：在群里对 QQ agent 说 `进入角色扮演：<角色名>`，说 `退出角色扮演` 恢复正常；也可以在控制台点「清除」临时关闭人格扮演，此时 AI 只按仿真提示词行动。
 
-详细写法见 [roles/README.md](../roles/README.md)：人格卡只写人设、不写工具用法；需要区分一代 / 二代时在标题里加 `〔一代〕` / `〔二代〕`（或 `[v1]` / `[v2]`）标记，桥接会只注入当前模式适用的小节，注入前标记会被去掉。
+详细写法见 [roles/README.md](../../roles/README.md)：人格卡只写人设、不写工具用法；需要区分一代 / 二代时在标题里加 `〔一代〕` / `〔二代〕`（或 `[v1]` / `[v2]`）标记，桥接会只注入当前模式适用的小节，注入前标记会被去掉。
 
 | 项 | 默认值 | 说明 |
 | --- | --- | --- |
@@ -214,7 +214,7 @@ SnowLuma 是专有组件，其许可不允许被打包分发，本项目只连�
 | `slang.workspaceTitle` | `QQ 黑话学习` | 黑话学习在 DSH 里的工作区标题 |
 | `slang.autoResearch` | `true` | 是否自动联网考证新词条；不需要就关掉，或把 `webSearch.provider` 改成 `bing`（默认复用 DSH 的联网搜索，不默认把群聊关键词发给 Bing） |
 
-黑话词库在控制台「黑话词库」页可查看 / 编辑，数据出机清单见 [LICENSE](../LICENSE) 的「数据出机清单」。
+黑话词库在控制台「黑话词库」页可查看 / 编辑，数据出机清单见 [LICENSE](../../LICENSE) 的「数据出机清单」。
 
 ## 9. 限额与分享：`usageLimits`、`draw`、`qzone`、`status`、`guestPhotos`、`quietHours`、`work`
 
@@ -284,4 +284,4 @@ SnowLuma 是专有组件，其许可不允许被打包分发，本项目只连�
 
 ---
 
-相关文档：[README.md](../README.md)（一键部署与项目流程）、[DSH_SETUP.md](DSH_SETUP.md)（DSH 端完整启动流程）、[roles/README.md](../roles/README.md)（人格卡写法）、[TOKEN_USAGE_CONSOLE.md](TOKEN_USAGE_CONSOLE.md)（花费看板）、[SECURITY_BASELINE.md](SECURITY_BASELINE.md)（安全基线与残余风险）、[PRIVACY.md](PRIVACY.md)（隐私承诺）。
+相关文档：[README.md](../../README.md)（一键部署与项目流程）、[DSH_SETUP.md](DSH_SETUP.md)（DSH 端完整启动流程）、[roles/README.md](../../roles/README.md)（人格卡写法）、[TOKEN_USAGE_CONSOLE.md](TOKEN_USAGE_CONSOLE.md)（花费看板）、[SECURITY_BASELINE.md](SECURITY_BASELINE.md)（安全基线与残余风险）、[PRIVACY.md](PRIVACY.md)（隐私承诺）。

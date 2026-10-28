@@ -10,7 +10,7 @@
 >
 > The default branch `main` **is** this version — a plain `git clone` gets it, no branch switching needed.
 
-For the detailed Chinese guide, see **[docs/guides/PROJECT_GUIDE.md](docs/guides/PROJECT_GUIDE.md)**.
+For the detailed Chinese configuration guide, see **[docs/guides/CONFIGURATION.md](docs/guides/CONFIGURATION.md)**.
 The documentation index (one line per doc, with "still current?" notes) is **[docs/README.md](docs/README.md)**;
 the repository/folder and script-naming conventions are in **[docs/FOLDER_MAP.md](docs/FOLDER_MAP.md)**.
 
@@ -113,11 +113,10 @@ qq-bridge/
   docs/
     README.md           # documentation index (one line per doc + "still current?" notes)
     FOLDER_MAP.md       # folder layout and scripts/ naming conventions
-    guides/             # user/operator facing: PROJECT_GUIDE, DSH_SETUP, VOICE, TOKEN_USAGE_CONSOLE, CONSOLE-UI-TESTING
+    guides/             # user/operator facing: CONFIGURATION, DSH_SETUP, TOKEN_USAGE_CONSOLE, CONSOLE-UI-TESTING
     design/             # design & planning docs
     research/           # investigation notes
-    audits/             # review / optimisation reports
-    legacy/             # archived docs that were superseded
+        legacy/             # archived docs that were superseded
   dsh/agent-presets/    # qq-chat / qq-chat-v2 DSH agent preset templates
   plugins/qq-agent-presets  # DSH bundle: generates the qq-chat / qq-chat-v2 preset patch rows + the shared tool guard
   plugins/qq-mode-console  # DSH plugin: exposes the qq-mode settings namespace (host half only; no UI card yet)
@@ -136,7 +135,7 @@ lives in the sibling folder **`../voice-tool/`** — it only needs SnowLuma, and
 
 ## Testing
 
-`npm run test:audit` runs isolated regression tests without production credentials, DSH, or QQ messages. The detailed audit is in [docs/audits/AUDIT_REPORT_2026-09-20.md](docs/audits/AUDIT_REPORT_2026-09-20.md) (Chinese); the 2026-09-18 one it superseded is archived in [docs/legacy/](docs/legacy/).
+`npm run test:audit` runs isolated regression tests without production credentials, DSH, or QQ messages. Token and cost details are in [docs/guides/TOKEN_USAGE_CONSOLE.md](docs/guides/TOKEN_USAGE_CONSOLE.md) (Chinese).
 
 After upgrading, legacy QQ session mappings without permission metadata are recreated once. Mode or preset changes also retire the old mapping and recreate the session on the next message; DSH history is retained.
 
