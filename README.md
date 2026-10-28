@@ -29,7 +29,7 @@ npm start                    # Windows 想崩溃自动重启，改双击 start.b
 - **必须填**：`snowluma.wsUrl`（默认 `ws://127.0.0.1:3001`）、`snowluma.httpUrl`、`snowluma.accessToken`（SnowLuma 那边的接入地址和令牌）；`ownerQQ`（机主自己的 QQ 号）；`allow.private`（允许私聊的 QQ 号列表）、`allow.groups`（允许的群号列表）。
 - **必须保持**：`allowAllWhenEmpty` 保持 `false`。改成 `true` 会让白名单为空时所有私聊和群聊都能触发 agent，非常危险，不要开。
 - **一般不用改**：`dsh.baseUrl`（默认 `http://127.0.0.1:3080`，本机 DSH）、`consolePort`（默认 `3100`）、`consoleToken`（留空时启动会自动生成并打印在日志里）。
-- **先不用管**：`deny.*`（黑名单，默认空）、`social` / `socialV2`（群聊仿真、发送节奏、表情、语音等调优）、`slang`（黑话学习）、`webSearch`（联网搜索）、`pricing`（花费折算）这些都是调优项，默认值已经能跑，不用逐个解释完再启动。
+- **先不用管**：`deny.*`（黑名单，默认空）、`social` / `socialV2`（群聊仿真、发送节奏、表情、语音等调优）、`slang`（黑话学习）、`webSearch`（联网搜索）、`pricing`（花费折算）这些都是调优项，默认值已经能跑，不用逐个解释完再启动。想调某个功能时看 [docs/guides/CONFIGURATION.md](docs/guides/CONFIGURATION.md)，里面把所有已有功能、默认值、改哪里、改完要不要重启都写齐了，人设也在那篇第 3 节：改 `roles/<角色名>.md`，或控制台「人格与角色」页点选编辑。
 
 > 注意：roles/小鲸鱼.md 是本仓库自带的示例人设，里面写了示例用的名字和称呼；别人部署时请把人设里的名字、称呼换成自己的，不要直接用示例人设里的名字。同样，preset 里的工作目录示例是 ~/qq-bridge，部署在别的路径时请按实际路径改。
 
