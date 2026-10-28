@@ -22,6 +22,15 @@ node scripts/setup-dsh.mjs   # 装 DSH 端 preset + MCP，装完必须重启 DSH
 npm start                    # Windows 想崩溃自动重启，改双击 start.bat
 ```
 
+## 配置说明：必填的就这几项，其他先不用动
+
+`config.example.json` 里键很多，但第一次跑起来只用改下面这些，剩下的保持默认值就能用，后面想调再去控制台或对应文档里改：
+
+- **必须填**：`snowluma.wsUrl`（默认 `ws://127.0.0.1:3001`）、`snowluma.httpUrl`、`snowluma.accessToken`（SnowLuma 那边的接入地址和令牌）；`ownerQQ`（机主自己的 QQ 号）；`allow.private`（允许私聊的 QQ 号列表）、`allow.groups`（允许的群号列表）。
+- **必须保持**：`allowAllWhenEmpty` 保持 `false`。改成 `true` 会让白名单为空时所有私聊和群聊都能触发 agent，非常危险，不要开。
+- **一般不用改**：`dsh.baseUrl`（默认 `http://127.0.0.1:3080`，本机 DSH）、`consolePort`（默认 `3100`）、`consoleToken`（留空时启动会自动生成并打印在日志里）。
+- **先不用管**：`deny.*`（黑名单，默认空）、`social` / `socialV2`（群聊仿真、发送节奏、表情、语音等调优）、`slang`（黑话学习）、`webSearch`（联网搜索）、`pricing`（花费折算）这些都是调优项，默认值已经能跑，不用逐个解释完再启动。
+
 > 注意：roles/小鲸鱼.md 是本仓库自带的示例人设，里面写了示例用的名字和称呼；别人部署时请把人设里的名字、称呼换成自己的，不要直接用示例人设里的名字。同样，preset 里的工作目录示例是 ~/qq-bridge，部署在别的路径时请按实际路径改。
 
 > **与上游的关系**：本项目是 **DSH-QQ Bridge（DSH-QQ 任务桥）**，基于开源项目 [qq-bridge](https://github.com/Derpyu520/qq-bridge)（作者 Derpyu520，MIT 许可证）二次开发的个人维护版本，基线为上游 v0.2.0-r4。在上游基础上强化了：多任务编排（把活拆成目标分步执行）、**口语急停**（自然说法即可叫停并作废未发出的排队消息）、进度播报、投递守卫与任务状态管理。原作者版权与 LICENSE 保留在 [LICENSE](LICENSE) 中。

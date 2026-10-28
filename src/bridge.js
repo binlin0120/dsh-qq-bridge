@@ -1,3 +1,4 @@
+import {preparePhotoReferences,submitImageTask,photoPublicReply,mediaFailure} from './photo-delivery.mjs';
 import {ChainService,requestContext,ModelLanes,collectServerState} from './short-chain.mjs';
 import {stopIntent,taskCanDeliver} from './stop-delivery.mjs';
 import {OwnerMaintenanceBroker} from './owner-maintenance.mjs';
@@ -2595,14 +2596,7 @@ async function main() {
     const detail=frame.type==='question/requested'?(frame.questions||[]).map(q=>q.question).join('\n'):String(frame.reason||frame.toolName||'工具审批');
     await taskProgress.notify(j,{kind:'required_question',task:j.task,question:scrubPrivate(detail),approval:frame.type==='approval/requested',answerNaturally:true,requestId:frame.eventId},{force:true,requested:true});return true;
   }
-  function photoStatusReply(photo){
-    if(photo.status==='completed')return '那张照片已经发给你啦。';
-    if(photo.status==='sending'||photo.status==='uncertain')return '那张照片还没确认发出去，我先核对，不重复发。';
-    if(photo.file)return '照片已经备好了，还没确认发出去。我先核对一下。';
-    if(photo.resultUrl)return '这张照片还没传好，刚才没发出去。记录留着，可以接着传，不另拍。';
-    if(photo.status==='failed')return '刚才那张照片这次没拍成，还没有发给你。';
-    return '我还在准备这张照片，传好再发你。';
-  }
+  function photoStatusReply(photo){return photoPublicReply(photo);}
   async function handleUrgentStop(key,text,sourceId){
     const intent=stopIntent(text);if(!intent||!orchestrator||!isOwnerKey(key)||currentMode!=='closed-agent')return false;
     const previous=orchestrator.store.get('stop_receipt',key+':'+sourceId);if(previous)return true;
@@ -8352,7 +8346,7 @@ ${formatGuestChatLines(key, fresh, 9000)}
     const model = String(cfg.draw?.model || 'gpt-image-2');
     const headers = { authorization: `Bearer ${laneKey()}`, 'content-type': 'application/json' };
     const input = { prompt: String(prompt), aspect_ratio: String(aspect || '1:1') };
-    if(job?.character){const refs=['~/workspace/小鲸鱼形象参考/基础1.png','~/workspace/小鲸鱼形象参考/基础2.png'];input.images=refs.map(f=>{const b=fs.readFileSync(f);validateImage(b);return 'data:image/png;base64,'+b.toString('base64');});input.prompt+=' 两张参考都是小鲸鱼自己的角色照片，以参考图保持同一个人的脸型、五官、眼镜和发型；有人物时只用小鲸鱼的参考脸，不另造人物、不生成其他人。物品或餐食照片无需人物出镜。按新场景改变动作、衣着和环境，不照搬旧背景。';}
+    if(job?.character&&!job.taskId&&!job.resultUrl){const refs=['~/workspace/小鲸鱼形象参考/基础1.png','~/workspace/小鲸鱼形象参考/基础2.png'];const prepared=await preparePhotoReferences({files:refs,cacheDir:path.join(STATE_DIR,'photo-reference-cache'),scriptPath:path.join(ROOT,'scripts/prepare-photo-references.py'),validate:validateImage});input.images=prepared.images;if(job)mediaJobs.update(job,{referenceBytes:prepared.report.encodedBytes,referenceHashes:prepared.report.references.map(r=>r.sourceSha256)});input.prompt+=' 两张参考都是小鲸鱼自己的角色照片，以参考图保持同一个人的脸型、五官、眼镜和发型；有人物时只用小鲸鱼的参考脸，不另造人物、不生成其他人。物品或餐食照片无需人物出镜。按新场景改变动作、衣着和环境，不照搬旧背景。';}
     // 默认尺寸：config.json 的 draw.imageSize（出厂 1K）。显式传 size 时以传参为准。
     const imageSize = String(size || cfg.draw?.imageSize || '1K');
     if (imageSize) input.image_size = imageSize;
@@ -8363,23 +8357,17 @@ ${formatGuestChatLines(key, fresh, 9000)}
     else {const edge=/^2K$/i.test(imageSize)?2048:/^4K$/i.test(imageSize)?4096:1024;const [aw,ah]=String(aspect||'1:1').split(':').map(Number);if(aw>0&&ah>0){const scale=edge/Math.max(aw,ah);input.size=`${Math.max(16,Math.round(aw*scale/16)*16)}x${Math.max(16,Math.round(ah*scale/16)*16)}`;}else input.size=`${edge}x${edge}`;}
 
     let tid=job?.taskId;
-    if(!tid) {
-      if(job) mediaJobs.update(job,{status:'submitting'});
-      const sub = await fetch(`${base}/task/submit`, {method:'POST',headers,body:JSON.stringify({model,input}),signal:AbortSignal.timeout(60000)});
-      const sj=await sub.json();
-      if(!sub.ok) {if(job) mediaJobs.update(job,{status:'failed'}); throw new Error(`画图提交被拒 HTTP ${sub.status}`);}
-      tid=sj.task_id||sj.id;
-      if(!tid) throw new Error('提交响应缺少任务号，结果未知，不自动重复');
-      if(job) mediaJobs.update(job,{taskId:tid,status:'running'});
-    }
+    if(!tid&&!job?.resultUrl)tid=await submitImageTask({url:base+'/task/submit',key:laneKey(),payload:{model,input},job:job||{},routeStateFile:path.join(STATE_DIR,'image-upload-routes.json'),log,update:fields=>{if(job)mediaJobs.update(job,fields);}});
 
     let url = job?.resultUrl || '';let buf;
-    for (let i = 0; i < 60 && !url && !buf; i++) {
+    const pollDeadline=Date.now()+300000;
+    for (let i = 0; i < 60 && !url && !buf && Date.now()<pollDeadline; i++) {
       await sleepMs(5000);
       try {
-        const q = await fetch(`${base}/task/${encodeURIComponent(tid)}`, { headers, signal: AbortSignal.timeout(30000) });
+        const q = await fetch(`${base}/task/${encodeURIComponent(tid)}`, { headers, signal: AbortSignal.timeout(Math.max(1000,Math.min(30000,pollDeadline-Date.now()))) });
+        if(!q.ok)throw Object.assign(Error('图片进度查询 HTTP '+q.status),{code:'IMAGE_POLL_PENDING'});
         const qj = await readImageJson(q).catch(error => {throw Error('画图失败：结果响应无效或超过限制');});
-        if (qj.status === 'failed' || qj.status === 'error' || qj.status === 'cancelled') throw new Error(`画图失败：${truncateText(JSON.stringify(qj.error ?? qj.result ?? qj.status), 200)}`);
+        if (qj.status === 'failed' || qj.status === 'error' || qj.status === 'cancelled') throw Object.assign(new Error(`画图失败：${truncateText(JSON.stringify(qj.error ?? qj.result ?? qj.status), 200)}`),{code:'IMAGE_GENERATION_FAILED'});
         if(qj.status==='completed'){
           try{const result=imageResult(qj,{validate:validateImage});if(!result)throw Error('任务已完成但结果缺少可取回的图片');url=result.url||'';buf=result.buffer;}
           catch(e){throw Error('画图失败：'+e.message);}
@@ -8388,7 +8376,7 @@ ${formatGuestChatLines(key, fresh, 9000)}
         if (String(error?.message).startsWith('画图失败')) throw error;
       }
     }
-    if (!url&&!buf) throw new Error('画了 5 分钟还没画好，先放弃了');
+    if (!url&&!buf) throw Object.assign(new Error('图片仍在原任务中等待结果'),{code:'IMAGE_POLL_PENDING'});
     if(job) mediaJobs.update(job,{...(url?{resultUrl:url}:{}),status:'running',phase:buf?'file_ready':'downloading'});
     if(!buf)buf = await curlDownload(url, path.join(os.tmpdir(), `jj-draw-${job?.id || Date.now()}.part`),job);
     validateImage(buf);
@@ -8719,22 +8707,30 @@ ${friends.length ? `\n这周还有别人找她聊：${friends.join('、')}\n` : 
     mediaJobs.update(j,{status:'sending'});
     const imageGuard=()=>{if(j.chainRequestId&&shortChain){const r=shortChain.record(j.chainRequestId);shortChain.guard({...r,owner:true},r);}if(j.character&&j.target.startsWith('group:'))return assertGroupMedia(j.authorization,j.target,'photo');};const imageReceipt=await sendImageTo(j.target,fs.readFileSync(j.file),j.caption,imageGuard);
     if(imageReceipt===null||imageReceipt===undefined)throw Error('图片发送结果未知，不能确认送达');
-    mediaJobs.update(j,{status:'completed',phase:'completed',doneAt:Date.now(),error:null,nextAt:0});if(j.chainRequestId&&shortChain){const r=shortChain.record(j.chainRequestId);if(r&&!r.cancelledAt){r.status='completed';r.result='照片已确认发送';shortChain.put(r);}}
+    mediaJobs.update(j,{status:'completed',phase:'completed',deliveryMessageId:imageReceipt,doneAt:Date.now(),error:null,nextAt:0});if(j.chainRequestId&&shortChain){const r=shortChain.record(j.chainRequestId);if(r&&!r.cancelledAt){r.status='completed';r.result='照片已确认发送';shortChain.put(r);}}
     temporal.verified(j.target,{entity:'照片送达:'+j.id,description:j.scene||j.prompt||'图片',status:'completed',at:j.doneAt,sourceId:j.id,sourceKind:'qq_delivery_receipt'});
     if(j.character){caps.photoSent(j.target);if(!caps.data.life||Number(caps.data.life.at)<=Number(j.at))caps.data.life={scene:j.scene||'',caption:j.caption||'',at:j.at,deliveredAt:Date.now()};caps.data.lifeHistory=[...(caps.data.lifeHistory||[]),caps.data.life].slice(-20);caps.save();}
     if(isOwnerKey(j.target)){const text=`（${j.character?'照片':'画图'}已送达，拍摄场景时间${new Date(j.at).toISOString()}）${j.scene||j.prompt}\n配文：${j.caption||''}`;noteOwnerChat('out',text);noteOutsideShare(j.target,text);}
     else {noteGuestChat(j.target,{dir:'out',text:`（${j.character?'照片':'画图'}已送达，原场景时间${new Date(j.at).toISOString()}）${j.scene||j.prompt} 配文：${j.caption||''}`});noteRelay(j.target,`（发了一张图）${j.prompt}`);}
     log(`画图任务已送达 ${j.id}`);
   }
-  setInterval(()=>{mediaJobs.tick(async j=>{
-    try {await runMediaJob(j);}catch(e){
+  async function processMediaJob(j){
+    try{await runMediaJob(j);if(j.chainRequestId&&shortChain)shortChain.syncMedia(j);}
+    catch(e){
       log(`画图任务 ${j.id} 未完成：${e.message}`);
-      if(j.resultUrl && /下载画好的图失败/.test(e.message) && Date.now()-j.at<6*3600000){mediaJobs.update(j,{status:'queued',downloadFailures:(j.downloadFailures||0)+1,nextAt:Date.now()+Math.min(15*60000,60000*2**Math.min(j.downloadFailures||0,4)),phase:'retry_wait',error:'下载慢，后台保留原任务恢复，不重复生图'});return;}
+      const failure=mediaFailure(e,j);const mayRetry=failure.retryable&&Date.now()-j.at<6*3600000;
+      mediaJobs.update(j,{...failure,status:mayRetry?'queued':failure.status==='queued'?'failed':failure.status,error:String(e.message).slice(0,300),errorCode:failure.code,...(mayRetry?{downloadFailures:(j.downloadFailures||0)+1,nextAt:Date.now()+Math.min(15*60000,60000*2**Math.min(j.downloadFailures||0,4))}:{})});
+      if(j.chainRequestId&&shortChain)shortChain.syncMedia(j);
+      if(mayRetry)return;
       const key=j.target;
-      if(!key.startsWith('group:')&&!j.failureNotifiedAt && canSendNow(key,{direct:j.direct===true})){const text=j.resultUrl?'刚才那张照片还没完整传过来，暂时没发成。我留着这次的记录，之后可以接着传，不另拍。':'刚才那张照片这次没拍成。';mediaJobs.update(j,{failureNotifiedAt:Date.now()});await sayBridge(key,text);if(isOwnerKey(key)){noteOwnerChat('out',text);noteOutsideShare(key,text);}}
+      if(!key.startsWith('group:')&&!j.chainCancelled&&!j.failureNotifiedAt&&!j.failureNoticeState&&canSendNow(key,{direct:j.direct===true})){
+        const text=photoPublicReply(j);mediaJobs.update(j,{failureNoticeState:'sending'});const receipt=await sayBridge(key,text,{nativeVoice:true});
+        mediaJobs.update(j,{failureNotifiedAt:Date.now(),failureNoticeState:receipt?.ok?'sent':'unknown'});
+      }
       throw e;
     }
-  }).catch(e=>log(`媒体队列异常：${e.message}`));},3000).unref?.();
+  }
+  setInterval(()=>{mediaJobs.tick(processMediaJob).catch(e=>log(`媒体队列异常：${e.message}`));},3000).unref?.();
 
   // Current-mode capabilities: identity is derived from QQ events/config, never model text.
   const capabilityRole = key => { const m=/^(private|group):(\d+)$/.exec(key);return m?rosterRoleOf(m[1],m[2],cfg):null; };
@@ -8856,10 +8852,11 @@ ${friends.length ? `\n这周还有别人找她聊：${friends.join('、')}\n` : 
     shortChain=new ChainService({store:orchestrator.store,
       allowed:c=>currentMode==='closed-agent'&&String(cfg.ownerQQ)===c.actorQQ&&isSessionAllowedInCurrentMode(c.origin),
       persona:publicPersona,history,
+      mediaStatus:c=>Object.values(mediaJobs.data).filter(j=>j.target===c.origin&&Date.now()-j.at<86400000).sort((a,b)=>b.at-a.at)[0],
       knowledge:c=>c.origin.startsWith('group:')?'只使用本群上下文，私聊记忆不在这里加载。':memoryBook.snapshot().text.split('\n').filter(l=>!/^##? |群里.*派活.*私聊|桥接只记状态|03:30|已从本会话挪给/.test(l)).join('\n').slice(0,12000),
       model:async(prompt,o)=>runMemoPrompt(prompt,90000,{preset:'jingjing-owner-chat',purpose:'chain_'+o.lane,contextKey:o.context.origin,scope:o.requestId,chain:true,lane:o.lane,...(o.stage==='decide'?{images:await resolveMediaList(o.context.media||[])}:{})}),
       send:async(key,text,guard)=>{guard?.();const parts=splitChatSegments(text);let receipt;for(const part of parts){guard?.();const ok=await auditAndSend(key,part,{capabilityGuard:guard});receipt={ok};if(!ok)return receipt;}if(isOwnerKey(key))noteOwnerChat('out',text,{kind:'chain_reply'});else noteGuestChat(key,{dir:'out',text,kind:'chain_reply'});return receipt||{ok:true};},
-      externalStatus:r=>r.engine==='orchestrator'?orchestrator.store.goal(r.externalId):(()=>{const j=taskProgress.data[r.externalId]||work.jobs[r.externalId]||mediaJobs.data[r.externalId];return j?{status:j.status,stage:j.stage,blocked:j.blocked,summary:j.summary,pendingRequest:j.pendingRequest?{eventId:j.pendingRequest.eventId,type:j.pendingRequest.type,questions:j.pendingRequest.questions}:null}:null;})(),
+      externalStatus:r=>r.engine==='orchestrator'?orchestrator.store.goal(r.externalId):(()=>{const j=taskProgress.data[r.externalId]||work.jobs[r.externalId]||mediaJobs.data[r.externalId];return j?{status:j.status,stage:j.stage||j.phase,phase:j.phase,error:j.error,errorCode:j.errorCode,submissionState:j.submissionState,blocked:j.blocked,summary:j.summary,pendingRequest:j.pendingRequest?{eventId:j.pendingRequest.eventId,type:j.pendingRequest.type,questions:j.pendingRequest.questions}:null}:null;})(),
       externalList:c=>[...taskProgress.list(ownerKey).filter(j=>!j.chainRequestId&&['queued','starting','running','interrupted'].includes(j.status)).map(j=>({id:j.id,task:j.task,status:j.status,engine:'maintenance'})),...orchestrator.context(ownerKey).filter(g=>!['delivered','cancelled'].includes(g.status)).map(g=>({id:g.goalId,task:g.request,status:g.status,engine:'orchestrator'}))],
       stop:async r=>{if(r.engine==='orchestrator'){const g=orchestrator.store.goal(r.externalId);if(g){orchestrator.source(ownerKey,r.id+':stop','停止这项任务');await orchestrator.control(ownerKey,r.id+':stop',{action:'cancel',goalId:g.id,revision:g.revision,op:'chain-stop'});}return false;}const j=taskProgress.data[r.externalId];if(j){taskProgress.update(j,{deliverySuppressedAt:Date.now(),status:j.sessionId?'stopping':'cancelled'});if(j.sessionId)await api.stopSessionWork(j.sessionId);return !j.sessionId;}if(work.jobs[r.externalId]){await work.cancel(ownerKey,r.externalId);return true;}const media=mediaJobs.data[r.externalId];if(media){mediaJobs.update(media,{deliverySuppressedAt:Date.now(),chainCancelled:true});return false;}return false;},
       execute:async(c,a,meta)=>{
@@ -8925,6 +8922,7 @@ ${friends.length ? `\n这周还有别人找她聊：${friends.join('、')}\n` : 
       },log
     });
     shortChain.isStop=stopIntent;
+    for(const j of Object.values(mediaJobs.data))if(j.chainRequestId)shortChain.syncMedia(j);
     log('主人统一能力入口已启用：按发言人授权，短操作直接执行，后台与聊天分开');
     setInterval(()=>{void shortChain.tick().catch(e=>log('计划执行未完成：'+scrubPrivate(e.message)));for(const r of shortChain.store.records('chain_request').filter(x=>x.externalId&&!['completed','failed','cancelled','uncertain'].includes(x.status))){if(r.engine==='orchestrator'){const g=orchestrator.store.goal(r.externalId);if(g&&['delivered','failed','cancelled','uncertain','blocked_external'].includes(g.status))void shortChain.complete(r.id,g.resultText||g.error||'任务没有完成',{failed:g.status!=='delivered'}).catch(e=>log('协作结果：'+e.message));}else if(r.engine==='file'){const j=work.jobs[r.externalId];if(j&&['completed','failed','cancelled','uncertain'].includes(j.status))void shortChain.complete(r.id,j.summary||j.error||'文件任务没有完成',{failed:j.status!=='completed'}).catch(e=>log('文件结果：'+e.message));}}},1000).unref?.();
   }
@@ -9272,6 +9270,7 @@ ${friends.length ? `\n这周还有别人找她聊：${friends.join('、')}\n` : 
     const guard=captureSendGuard(key),facts=serviceFacts(scrubPrivate(String(text)),options.facts||{});
     const history=isOwnerKey(key)?ownerChat:loadGuestChat(key);let output;
     try{
+      if(options.nativeVoice===true)throw Error('Use verified conversational text');
       // A model outage or DSH restart must not recursively call that failed model for an explanation.
       if(!dshReady||/模型连续出错|模型出错|agent 处理出错|消息未被接受|服务重启中/.test(facts.text))throw Error('Conversational service unavailable');
       const owner=isOwnerKey(key),persona=readConversationPersona(owner?(closedAgentPreset||'dafeiyu'):'jingjing-guest');

@@ -1,3 +1,4 @@
+import {isPrivateIp} from './safe-fetch.js';
 import fs from 'node:fs';
 import {randomUUID} from 'node:crypto';
 import {execFile} from 'node:child_process';
@@ -24,7 +25,7 @@ export async function downloadImage(u,tmp,ips,{validate,log=()=>{},run=curl,cloc
     return {ip,speed:([200,206].includes(status)&&bytes>0&&Number.isFinite(speed))?speed:0};
   }));
   log(`图床测速 ${host}：`+probes.map(p=>`${p.ip}=${Math.round(p.speed/1024)}KB/s`).join(' '));
-  const ranked=probes.sort((a,b)=>b.speed-a.speed).map(p=>p.ip);const deadline=clock()+240000;let last='暂时没有完整图片';
+  const ranked=[...new Set([...probes.sort((a,b)=>b.speed-a.speed).map(p=>p.ip),...ips])];if(meta.ip&&!ranked.slice(0,2).includes(meta.ip))delete meta.ip;const unresponsive=new Set();const deadline=clock()+240000;let last='暂时没有完整图片';
   try{
     for(let attempt=0;attempt<32&&clock()<deadline;attempt++){
       const ip=(!full&&meta.ip)||ranked[attempt%ranked.length];if(!ip)break;
@@ -37,7 +38,8 @@ export async function downloadImage(u,tmp,ips,{validate,log=()=>{},run=curl,cloc
       if(offset&&meta.validator)args.push('-H','If-Range: '+meta.validator);
       const r=await run([...args,u],65000);const h=responseHeaders(fs.existsSync(hdr)?fs.readFileSync(hdr,'utf8'):'');
       const size=fs.existsSync(chunk)?fs.statSync(chunk).size:0;const range=validRange(h,offset);
-      if(!Number.isFinite(h.status)||h.status<100)throw Object.assign(Error('图片连接未得到有效响应，保留已验证断点'),{code:'TRANSPORT_NO_RESPONSE'});
+      if(!Number.isFinite(h.status)||h.status<100){delete meta.ip;unresponsive.add(ip);last='图片连接未得到有效响应，保留已验证断点';log(last+'并切换IP');if(ranked.every(x=>unresponsive.has(x)))throw Object.assign(Error('所有图片连接均未得到有效响应，保留已验证断点'),{code:'TRANSPORT_NO_RESPONSE'});continue;}unresponsive.delete(ip);
+      if(h.status===404||h.status===410)throw Object.assign(Error('原图片链接已失效 HTTP '+h.status),{code:'IMAGE_NOT_FOUND'});
       if([429,500,502,503,504].includes(h.status))throw Object.assign(Error('图床暂时不可用，保留已验证断点 HTTP '+h.status),{code:'IMAGE_SERVER_UNAVAILABLE'});
       const validator=h.etag&&!/^W\//.test(h.etag)?h.etag:h['last-modified']||'';
       if(h.status===200){
@@ -58,4 +60,11 @@ export async function downloadImage(u,tmp,ips,{validate,log=()=>{},run=curl,cloc
     }
     throw Error('下载画好的图失败：'+last);
   }finally{for(const f of [hdr,chunk])try{fs.unlinkSync(f);}catch{}}
+}
+
+export function selectImageDownloadIps(host, dnsIps, policy={}, now=Date.now()) {
+  const fallback=[...new Set(dnsIps)];const route=policy?.hosts?.[String(host).toLowerCase()];
+  if(!route||!Number.isFinite(route.verifiedAt)||route.verifiedAt>now||now-route.verifiedAt>7*86400000||!Number.isFinite(route.expiresAt)||route.expiresAt<=now)return fallback;
+  const preferred=(Array.isArray(route.ips)?route.ips:[]).slice(0,2).filter(ip=>typeof ip==='string'&&/^\d+\.\d+\.\d+\.\d+$/.test(ip)&&!isPrivateIp(ip));
+  return [...new Set([...preferred,...fallback])];
 }

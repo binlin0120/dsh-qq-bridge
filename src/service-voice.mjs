@@ -16,6 +16,7 @@ export function buildServiceVoicePrompt({facts,persona,recent,last,owner,now}){
 }
 export function validateServiceVoice(raw,facts){
  const object=JSON.parse(String(raw).replace(/^```(?:json)?\s*|\s*```$/g,''));const t=object.text?.trim();
+ if(/原记录|重复执行|任务账本|内部机制|人设|程序刚|模型调用/.test(t||''))throw Error('Internal operation wording in casual reply');
  if(object.phase!==facts.phase||!t||t.length>650||/【|\[SILENT\]|(?:指令|控制通道|状态码)|任务回答[:：]|直接说[“「]|请回复[“「]|(?:^|\n)(?:状态|任务|原因)[:：]/.test(t))throw Error('Unnatural service reply');
  if(facts.topic==='outbound_photo'&&/(?:你|您).{0,18}(?:再发|重发|重新发|再传|重拍|重新拍|上传|换.{0,3}网)|好像|应该就|可能就/.test(t))throw Error('Photo direction or certainty changed');
  if(facts.mustKeep.some(x=>!t.includes(x)))throw Error('Service reply lost an identifier');
@@ -27,7 +28,7 @@ export function validateServiceVoice(raw,facts){
 export async function composeServiceReply(input,render){return validateServiceVoice(await render(buildServiceVoicePrompt(input)),input.facts);}
 export function fallbackServiceVoice(facts){
  // Used only when the conversational model is unavailable. Do not retry a failed model to narrate its own failure.
- if(/insufficient_balance|insufficient_quota|余额不足|\b402\b/.test(facts.text))return '现在这个渠道余额不足啦 刚才那句没能继续处理 没有反复重试';
- if(/unauthorized|\b401\b|\b403\b/i.test(facts.text))return '现在这个渠道的验证没有通过 刚才那句暂时没接上 没有反复重试';
- return facts.text.replace(/^[⚠️⏳🔐❓✅❌⏹️⏰\s]+/u,'').replace(/agent\s*处理出错[:：]?[^\n]*/g,'刚才没能接上这句话').replace(/消息未被接受[:：]?[^\n]*/g,'刚才那句话没能接上').replace(/请回复[“「]任务回答[:：]通过[”」]或[“「]任务回答[:：]拒绝[”」][。.]?/g,'这一步你同意嘛 不同意也可以直接说').replace(/直接说“重置会话”我就开始 这条还没有启动切换/g,'你想保留刚才聊的内容 接着换个新对话嘛').replace(/系统服务重启中，消息已排队，恢复后自动处理。/g,'刚才断开了一下 你的话我留着呢 接上后继续聊呀').replace(/控制通道|指令识别/g,'').trim();
+ if(/insufficient_balance|insufficient_quota|余额不足|\b402\b/.test(facts.text))return '这边余额不够啦，刚才那件事没能弄好。';
+ if(/unauthorized|\b401\b|\b403\b/i.test(facts.text))return '刚才这边出了点问题，没能接上你的话。';
+ return facts.text.replace(/原记录留着了[，,。\s]*没有重复执行/g,'刚才没弄好').replace(/(?:没有重复执行|没有反复重试|不重复发|记录留着[，,]?可以接着传[，,]?不另拍)/g,'').replace(/^[⚠️⏳🔐❓✅❌⏹️⏰\s]+/u,'').replace(/agent\s*处理出错[:：]?[^\n]*/g,'刚才没能接上这句话').replace(/消息未被接受[:：]?[^\n]*/g,'刚才那句话没能接上').replace(/请回复[“「]任务回答[:：]通过[”」]或[“「]任务回答[:：]拒绝[”」][。.]?/g,'这一步你同意嘛 不同意也可以直接说').replace(/直接说“重置会话”我就开始 这条还没有启动切换/g,'你想保留刚才聊的内容 接着换个新对话嘛').replace(/系统服务重启中，消息已排队，恢复后自动处理。/g,'刚才断开了一下 你的话我留着呢 接上后继续聊呀').replace(/控制通道|指令识别/g,'').trim();
 }

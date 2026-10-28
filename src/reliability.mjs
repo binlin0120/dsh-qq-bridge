@@ -168,7 +168,7 @@ export class DurableJobs {
     const j = Object.values(this.data).find(x => x.status === 'queued' && (!x.nextAt || Date.now() >= x.nextAt));
     if (!j) return; this.busy = true; this.update(j, { status: 'running' });
     try { await worker(j); if (j.status === 'running') this.update(j, { status: 'completed', doneAt: Date.now() }); }
-    catch (e) { this.update(j, { status: j.status === 'sending' || j.status === 'submitting' ? 'uncertain' : 'failed', error: String(e.message).slice(0,300) }); }
+    catch (e) { this.update(j, { status: ['cancelled','uncertain','failed'].includes(j.status)?j.status:j.status === 'sending' || j.status === 'submitting' ? 'uncertain' : 'failed', error: String(e.message).slice(0,300) }); }
     finally { this.busy = false; }
   }
 }

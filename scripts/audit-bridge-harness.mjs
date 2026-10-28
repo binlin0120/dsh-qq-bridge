@@ -1,3 +1,4 @@
+import * as photoDeliveryLib from '../src/photo-delivery.mjs';
 import * as chainLib from '../src/short-chain.mjs';
 import {stopIntent,taskCanDeliver} from '../src/stop-delivery.mjs';
 import {OwnerMaintenanceBroker} from '../src/owner-maintenance.mjs';
@@ -157,7 +158,7 @@ export async function bridgeHarness({ config = {}, savedState, files = {}, globa
     ensureSession, ensureSlangLearnerSession, resolvePresetName, deliverPrompt, drainPromptQueue,
     temporal, invocations, withSlangContext, companionTick, maybeConsolidateMemory, consolidateFriendMemory, maybeConsolidateFriends, guestMemState, loadGuestChat, maybeWriteDiary, writeWeeklyDiary, validateImage, canSendNow,
     noteOwnerChat, noteGuestChat, chatArchive, ownerMemory, qqRequests, modelGuard, mediaJobs,
-    runMediaJob, handleGuestPhoto, outTarget, dailyQuota, isRegisteredReminder,
+    drawImage,processMediaJob,runMediaJob, handleGuestPhoto, outTarget, dailyQuota, isRegisteredReminder,
     learnerWaiters,internalPurposes,socialPublisher,publishSocial,isResetRequest,requestSessionReset,pumpResetRequests,resetRequests,isScheduledSession,isCurrentSession,reverse,safeResetSession,sessionHandoffs,groupPolicies,groupAuthority,assertGroupMedia,handleOwnerGroupCommand,syncGroupMembership,updateGroupMembership,memoryBook,currentMechanismFacts,caps,work,rosterUpdate,capabilityKeys,capabilityRole,handleCapabilityCommand,handleCompanionActions,queueCharacterPhoto,collectCurrentSticker,sendCurrentSticker,runMemoPrompt,
     buildInboundNote, extractFaceImage,
     tickReminders, reminderPermits,
@@ -205,7 +206,7 @@ export async function bridgeHarness({ config = {}, savedState, files = {}, globa
     discoverDshLaunchToken: () => '', unwrap, createTurnCollector,
     ...markdown, ...sensitive, ...wait, ...safeFetch, ...forward, ...slang, ...sticker,
     ...modelPrices, ...tokenLedger, ...voiceLib, ...stateAcl, ...presetPrompt, ...reliability, ...roleCard, ...capabilities, ...memoryBookLib, ...groupContextLib, ...taskProgressLib, ...imageDownloadLib, ...imageResultLib, ...progressNarratorLib, ...outboxLib, ...memoryQueueLib, ...temporalLib, ...invocationLib, ...parallelDownloadLib, ...companionGateLib, ...socialPublishingLib,
-    ...chainLib,Orchestrator,OwnerMaintenanceBroker,stopIntent,taskCanDeliver,parseAgentObject,classifyModelError,
+    ...photoDeliveryLib,submitImageTask:async()=>{throw Error('Fixture image submission requires an explicit test transport');},...chainLib,Orchestrator,OwnerMaintenanceBroker,stopIntent,taskCanDeliver,parseAgentObject,classifyModelError,
     ...serviceVoiceLib,composeServiceReply:async ({facts})=>facts.text,
     TaskProgress: class extends taskProgressLib.TaskProgress { constructor(file,options){super(file,{...options,render:async(j,facts)=>j.stage||JSON.stringify(facts)});} },
     // ACL 收紧会 spawn icacls 去改**真实**文件系统；测试不该做这件事（同理见下面的
