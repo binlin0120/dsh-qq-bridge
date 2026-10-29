@@ -60,7 +60,7 @@ test('restart does not revoke queued work during initial mode discovery',async()
  h=await bridgeHarness({config,files});try{await h.work.reconcile();assert.equal(Object.values(h.work.jobs)[0].status,'queued');h.setMode('closed-agent');h.caps.reconcile(h.capabilityKeys());await h.work.reconcile();assert.equal(Object.values(h.work.jobs)[0].status,'queued');}finally{await h.close();}
 });
 
-test('character photos reject named real contacts instead of drawing them',()=>withBridge(async h=>{await assert.rejects(h.queueCharacterPhoto('private:23456','小鲸鱼和扶摇一起拍两个人的合照'),/换个日常/);assert.equal(Object.keys(h.mediaJobs.data).length,0);}));
+test('character photos reject named real contacts instead of drawing them',()=>withBridge(async h=>{await assert.rejects(h.queueCharacterPhoto('private:23456','鲸鲸和扶摇一起拍两个人的合照'),/换个日常/);assert.equal(Object.keys(h.mediaJobs.data).length,0);}));
 
 test('model placeholder work marker uses actual trailing requirements and rejects empty templates',()=>withBridge(async h=>{
  h.rosterUpdate('add','admins',23456);const answer=await h.handleCompanionActions('private:23456','【工作：完整需求】\n输入sample.csv，按姓名去重，保留第一行，输出CSV');const j=Object.values(h.work.jobs)[0];assert.match(j.task,/按姓名去重/);assert.match(answer,/排队/);const before=Object.keys(h.work.jobs).length;const no=await h.handleCompanionActions('private:23456','【工作：完整需求】');assert.equal(Object.keys(h.work.jobs).length,before);assert.match(no,/描述不完整/);

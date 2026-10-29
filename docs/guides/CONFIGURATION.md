@@ -1,5 +1,7 @@
 # 配置说明：所有已有功能怎么配
 
+> 可迁移版本新增 `workspaceRoot`、`memoryFile`、`orchestration`，并使用图片服务密钥环境变量。新部署先阅读 [可迁移部署说明](PORTABLE_DEPLOYMENT.md)；其中的目录与图片协议说明优先于历史部署示例。
+
 本文档对应 `config.example.json` 和 `README.md`，目标是：第一次部署只改必填项就能跑，想调某个功能时能在这一篇里找到它、知道默认值、改哪里、改完要不要重启。
 
 > 约定：下面写出的默认值以 `config.example.json` 为准（复制成 `config.json` 后就是你的初始值）。如果把某项删掉，桥接会用内置默认值，多数情况下和示例值接近，不会因为缺一项就起不来。

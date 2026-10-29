@@ -1,5 +1,7 @@
 # DSH-QQ Bridge · DSH-QQ 任务桥（QQ ↔ DeepSeek Harness）
 
+> 当前可迁移版本已包含持久化提醒、短链路能力执行、任务取消及照片投递恢复。首次部署、目录与记忆配置、图片服务协议和验证范围见 [可迁移部署说明](docs/guides/PORTABLE_DEPLOYMENT.md)。私有配置、会话、记忆、音频和角色参考图不随仓库提供。
+
 **English**: [README.en.md](README.en.md) | **中文**: [README.md](README.md)
 
 > 🗂️ 文档索引见 **[docs/README.md](docs/README.md)**；目录/脚本命名约定见 **[docs/FOLDER_MAP.md](docs/FOLDER_MAP.md)**。

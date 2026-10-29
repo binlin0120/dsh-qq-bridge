@@ -1,5 +1,7 @@
 > **DSH-QQ Bridge** — a personally maintained fork of qq-bridge (see the Chinese [README.md](README.md) as the canonical documentation for this version).
 
+This portable source tree includes persistent reminders and delivery recovery. Deployment paths, memory, image credentials, optional dependencies, and offline test coverage are documented in the [portable deployment guide](docs/guides/PORTABLE_DEPLOYMENT.md). No private configuration, conversation state, or character reference images are distributed.
+
 # QQ ↔ DeepSeek Harness Bridge (qq-bridge)
 
 > Connect QQ messages to DeepSeek Harness (DSH) agents: QQ friends/groups become DSH conversations, and agent replies (including questions and tool approvals) are sent back to QQ.

@@ -8,7 +8,7 @@ const begin='<!-- BRIDGE_FACTS_BEGIN -->',end='<!-- BRIDGE_FACTS_END -->';
 const obsolete=/表情发送：多条只认第一条|一次只能塞一个|重置当前会话.*(?:需|要)重建|定时任务绑会话.*重建|让我对别人开口的三步|让其他人也能开口，分三步|照片3张\/天|当前实际只有机主能派活|生图下载慢.*别动|想让别人也有本地工具|cron.*都在凌晨|费用侧.*走.*0[.]1|当前.*走.*0[.]1.*渠道/;
 export class MemoryBook{
  constructor({file,dir,facts,resolveSource,clean=scrubPrivate}){Object.assign(this,{file,dir,facts,resolveSource,clean});fs.mkdirSync(path.dirname(file),{recursive:true,mode:0o700});fs.mkdirSync(dir,{recursive:true,mode:0o700});this.correctionsFile=path.join(dir,'corrections.json');}
- raw(){try{return fs.readFileSync(this.file,'utf8');}catch(e){if(e.code==='ENOENT')return '# 小鲸鱼的记忆本\n';throw e;}}
+ raw(){try{return fs.readFileSync(this.file,'utf8');}catch(e){if(e.code==='ENOENT')return '# 鲸鲸的记忆本\n';throw e;}}
  normalize(text,corrections=readState(this.correctionsFile,[])){
   const a=text.indexOf(begin);if(a>=0){const b=text.indexOf(end,a);if(b<0)throw Error('受管事实区损坏，保留原文件等待修复');text=text.slice(0,a)+text.slice(b+end.length);}
   let lines=text.split('\n').filter(l=>!obsolete.test(l)&&!(/^(?!.*(?:取消|过期|不限|错误|不再)).*(?:说说|空间).*(?:每天|一天|每日).*(?:两条|2条)/.test(l))&&!(/^(?!.*(?:取消|过期|错误|owner|机主)).*(?:群聊|所有群).*(?:不发照片|不能发图|不允许发图)/.test(l)));

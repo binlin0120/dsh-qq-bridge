@@ -66,3 +66,21 @@ docs/guides/VOICE.md
 # 语音库（用户个人音频素材，config.json 的 socialV2.voice.dir 指向此处）
 audio/
 
+
+# Private deployment, media and maintenance artifacts
+workspace/
+backups/
+.env
+.env.*
+!.env.example
+.codex-*/
+.image-ip-check-*/
+*.sqlite*
+*.db
+*.sw-*
+*.bak[0-9]*
+__pycache__/
+*.pyc
+
+# Public portable voice instructions
+!docs/guides/VOICE.md

@@ -87,7 +87,7 @@ function loadRules() {
 /** 收集候选文件：git 已跟踪 + 未跟踪但未被 ignore 的。git 不可用时退化为目录遍历。 */
 function listFiles() {
   const git = (a) => {
-    const res = spawnSync('git', a, { cwd: ROOT, encoding: 'utf8', timeout: 60000 });
+    const res = spawnSync('git', ['-c','core.quotepath=false',...a], { cwd: ROOT, encoding: 'utf8', timeout: 60000 });
     if (res.error || res.status !== 0) return null;
     return (res.stdout ?? '').split('\n').map((s) => s.trim()).filter(Boolean);
   };
@@ -203,23 +203,34 @@ const allowRe = rules.allowPaths.map((p) => (p.includes('*') ? globToRe(p) : new
 const denyFileRes = rules.denyFiles.map((p) => ({ glob: p, re: globToRe(p) }));
 
 const findings = [];
+// Strong credential checks run on every text file, including fixtures and files
+// allowed by the heuristic rules. Reports never reproduce credential fragments.
+const hardRules=[
+  {name:'GitHub access token',pattern:/\b(?:github_pat_[A-Za-z0-9_]{30,}|gh[pousr]_[A-Za-z0-9]{30,})\b/g},
+  {name:'Provider API key',pattern:/\bsk-[A-Za-z0-9_-]{20,}\b/g},
+  {name:'Private key material',pattern:/-----BEGIN [A-Z ]*PRIVATE KEY-----\s+[A-Za-z0-9+/=]{40,}/g},
+];
 for (const rel of files) {
   const normalized = rel.split(path.sep).join('/');
   // ① 文件级：本来就不该出现的文件
   for (const { glob, re } of denyFileRes) {
     if (re.test(normalized)) findings.push({ kind: 'file', rule: `不应入库的文件（${glob}）`, file: normalized, masked: '' });
   }
-  if (allowRe.some((re) => re.test(normalized))) continue;
   if (BINARY_EXT.has(path.extname(normalized).toLowerCase())) continue;
   const abs = path.join(ROOT, rel);
   let buf;
   try { buf = fs.readFileSync(abs); } catch { continue; }
   if (looksBinary(buf)) continue;
   const text = buf.toString('utf8');
+  for(const rule of hardRules){for(const m of text.matchAll(rule.pattern)){
+    if(normalized.startsWith('scripts/test-')&&/^sk-(?:test-|from-|fixture-|fake-)/.test(m[0]))continue;
+    findings.push({kind:'credential',rule:rule.name,file:normalized,line:text.slice(0,m.index).split('\n').length,masked:'[REDACTED]'});
+  }}
+  if (allowRe.some((re) => re.test(normalized))) continue;
   // ② 内容级：一个文件里同一规则最多报 3 处（带行号），方便直接定位；不要把整文件刷屏。
   for (const rule of rules.deny) {
     let re;
-    try { re = new RegExp(rule.pattern, rule.flags ?? 'g'); }
+    try { re = new RegExp(rule.pattern, [...new Set((rule.flags??'')+'g')].join('')); }
     catch (error) { console.error(`[privacy-scan] 规则「${rule.name}」正则非法：${error.message}`); continue; }
     re.lastIndex = 0;
     let m;

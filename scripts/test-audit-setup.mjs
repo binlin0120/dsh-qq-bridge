@@ -114,11 +114,11 @@ try {
     const capture = path.join(bin, 'called.json');
     const cli = path.join(bin, 'fake-dsh.mjs');
     fs.writeFileSync(cli, `import fs from 'node:fs'; fs.writeFileSync(process.env.QQ_TEST_CAPTURE, JSON.stringify({args: process.argv.slice(2), home: process.env.DSH_HOME}));\n`);
-    fs.writeFileSync(path.join(bin, 'dsh.cmd'), `@echo off\r\n"${process.execPath}" "${cli}" %*\r\n`);
+    fs.writeFileSync(path.join(bin, 'dsh.cmd'), '@echo off\r\n"%QQ_TEST_NODE%" "%QQ_TEST_CLI%" %*\r\n');
     const profile = 'test&name%CD%!';
     const result = f.run(profile, {
       PATH: [bin, path.dirname(process.execPath)].join(path.delimiter),
-      QQ_BRIDGE_SKIP_DSH_INSTALL: '0', QQ_TEST_CAPTURE: capture,
+      QQ_BRIDGE_SKIP_DSH_INSTALL: '0', QQ_TEST_CAPTURE: capture, QQ_TEST_NODE:process.execPath, QQ_TEST_CLI:cli,
     });
     assert.equal(result.status, 0, result.stderr);
     assert.ok(fs.existsSync(capture), `CLI was not invoked: ${result.stdout}`);

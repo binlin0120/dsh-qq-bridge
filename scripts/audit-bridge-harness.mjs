@@ -1,3 +1,4 @@
+import * as reminderLib from '../src/reminder-ledger.mjs';
 import * as photoDeliveryLib from '../src/photo-delivery.mjs';
 import * as chainLib from '../src/short-chain.mjs';
 import {stopIntent,taskCanDeliver} from '../src/stop-delivery.mjs';
@@ -56,7 +57,7 @@ export async function bridgeHarness({ config = {}, savedState, files = {}, globa
   fs.writeFileSync(path.join(temp, 'config.json'), JSON.stringify({
     dsh: { authToken: 'fixture-only' }, ownerQQ: 123,
     allow: { private: ['123'], groups: ['456'] }, consolePort: 0,
-    consoleToken: 'fixture-console-token', slang: { enabled: false }, ...config,
+    consoleToken: 'fixture-console-token', slang: { enabled: false }, quietHours:{from:0,to:0}, ...config,
   }));
   if (savedState) fs.writeFileSync(path.join(temp, 'state/sessions.json'), JSON.stringify(savedState));
   // 额外状态文件（用于测试"启动时读到损坏/旧版文件"这类路径）。
@@ -140,14 +141,14 @@ export async function bridgeHarness({ config = {}, savedState, files = {}, globa
     return acc;
   }, { out: [], droppingImport: false }).out.join('\n');
   source = source.replaceAll('import.meta.url', JSON.stringify(pathToFileURL(path.join(temp, 'src/bridge.js')).href));
-  source = source.replaceAll('~/workspace', path.join(temp,'workspace').replaceAll('\\','/'));
-  source = source.replaceAll('~/.dsh', path.join(temp,'dsh').replaceAll('\\','/'));
+  source = source.replaceAll('/root/workspace', path.join(temp,'workspace').replaceAll('\\','/'));
+  source = source.replaceAll('/root/.dsh', path.join(temp,'dsh').replaceAll('\\','/'));
   source = source.slice(0, source.indexOf("process.on('SIGINT'"));
   source = source.replace('  bot.onPrivateMessage(async (event) => {', `
   const fixtureOriginalPrompt=api.sessions.prompt;
   api.sessions.prompt=async params=>{
     const response=await fixtureOriginalPrompt(params);
-    if(String(params.content?.[0]?.text||'').includes('你是同一段QQ私聊里的小鲸鱼')){
+    if(String(params.content?.[0]?.text||'').includes('你是同一段QQ私聊里的鲸鲸')){
       const waiters=learnerWaiters.get(params.sessionId)||[];const waiter=waiters.shift();
       if(waiter){clearTimeout(waiter.timer);waiter.resolve('我在核对这一步的结果，弄清楚再跟你说。');}
     }
@@ -158,12 +159,12 @@ export async function bridgeHarness({ config = {}, savedState, files = {}, globa
     ensureSession, ensureSlangLearnerSession, resolvePresetName, deliverPrompt, drainPromptQueue,
     temporal, invocations, withSlangContext, companionTick, maybeConsolidateMemory, consolidateFriendMemory, maybeConsolidateFriends, guestMemState, loadGuestChat, maybeWriteDiary, writeWeeklyDiary, validateImage, canSendNow,
     noteOwnerChat, noteGuestChat, chatArchive, ownerMemory, qqRequests, modelGuard, mediaJobs,
-    drawImage,processMediaJob,runMediaJob, handleGuestPhoto, outTarget, dailyQuota, isRegisteredReminder,
+    WORKSPACE_ROOT,MEMORY_FILE,resolveOutboxPath,drawImage,processMediaJob,runMediaJob, handleGuestPhoto, outTarget, dailyQuota, isRegisteredReminder,
     learnerWaiters,internalPurposes,socialPublisher,publishSocial,isResetRequest,requestSessionReset,pumpResetRequests,resetRequests,isScheduledSession,isCurrentSession,reverse,safeResetSession,sessionHandoffs,groupPolicies,groupAuthority,assertGroupMedia,handleOwnerGroupCommand,syncGroupMembership,updateGroupMembership,memoryBook,currentMechanismFacts,caps,work,rosterUpdate,capabilityKeys,capabilityRole,handleCapabilityCommand,handleCompanionActions,queueCharacterPhoto,collectCurrentSticker,sendCurrentSticker,runMemoPrompt,
     buildInboundNote, extractFaceImage,
     tickReminders, reminderPermits,
     testMemo(result) { api.sessions.prompt = async(params)=> { const waiters=learnerWaiters.get(params.sessionId); if(waiters?.length) { const w=waiters.shift();clearTimeout(w.timer); if(typeof result==='object' && result?.message) w.reject(result);else w.resolve(result); } return {result:{ok:true,value:{}}}; }; },
-    shortChain,modelLanes,taskProgress,orchestrator,handleUrgentStop,deliverTaskResult,sendEpochs,applyOrchestrationRoster,applyOwnerMaintenance,applyOwnerMaintenanceControl,observeOrchestratorFrame,applyOrchestrationActions,runServiceVoicePrompt,sayBridge,pendingResetMeaning,readConversationPersona, splitChatSegments, sendToQQ, sendStickerV2, handleIncoming, startConsoleServer, cfg, state, api, promptQueues,
+    shortChain,reminderLedger,modelLanes,taskProgress,orchestrator,handleUrgentStop,deliverTaskResult,sendEpochs,applyOrchestrationRoster,applyOwnerMaintenance,applyOwnerMaintenanceControl,observeOrchestratorFrame,applyOrchestrationActions,runServiceVoicePrompt,sayBridge,pendingResetMeaning,readConversationPersona, splitChatSegments, sendToQQ, sendStickerV2, handleIncoming, startConsoleServer, cfg, state, api, promptQueues,
     getSocialV2State, appendSocialV2Message, recordSentMessagesV2,
     buildWakePromptV2, buildWakeSnapshotV2, sendWakePromptV2, socialV2,
     refreshMode, modeAllowed, trackTurnEvent, replayPendingWakeReasonsV2,
@@ -206,7 +207,7 @@ export async function bridgeHarness({ config = {}, savedState, files = {}, globa
     discoverDshLaunchToken: () => '', unwrap, createTurnCollector,
     ...markdown, ...sensitive, ...wait, ...safeFetch, ...forward, ...slang, ...sticker,
     ...modelPrices, ...tokenLedger, ...voiceLib, ...stateAcl, ...presetPrompt, ...reliability, ...roleCard, ...capabilities, ...memoryBookLib, ...groupContextLib, ...taskProgressLib, ...imageDownloadLib, ...imageResultLib, ...progressNarratorLib, ...outboxLib, ...memoryQueueLib, ...temporalLib, ...invocationLib, ...parallelDownloadLib, ...companionGateLib, ...socialPublishingLib,
-    ...photoDeliveryLib,submitImageTask:async()=>{throw Error('Fixture image submission requires an explicit test transport');},...chainLib,Orchestrator,OwnerMaintenanceBroker,stopIntent,taskCanDeliver,parseAgentObject,classifyModelError,
+    ...reminderLib,...photoDeliveryLib,submitImageTask:async()=>{throw Error('Fixture image submission requires an explicit test transport');},...chainLib,Orchestrator,OwnerMaintenanceBroker,stopIntent,taskCanDeliver,parseAgentObject,classifyModelError,
     ...serviceVoiceLib,composeServiceReply:async ({facts})=>facts.text,
     TaskProgress: class extends taskProgressLib.TaskProgress { constructor(file,options){super(file,{...options,render:async(j,facts)=>j.stage||JSON.stringify(facts)});} },
     // ACL 收紧会 spawn icacls 去改**真实**文件系统；测试不该做这件事（同理见下面的
@@ -237,10 +238,10 @@ export async function bridgeHarness({ config = {}, savedState, files = {}, globa
   vm.runInContext(`Object.assign(globalThis, (() => { ${modelViewSource}\nreturn { compactModelMessage, compactModelData, serializeModelData }; })());`, context);
   vm.runInContext(source + '\nglobalThis.auditReady = main();', context);
   const bridge = await context.auditReady;
-  bridge.setPresets(['standard', 'qq-chat', 'qq-chat-v2']);
+  bridge.setPresets(['standard','qq-chat','qq-chat-v2','dafeiyu','jingjing-guest','jingjing-owner-chat','jingjing-owner-maintenance','jingjing-worker','jingjing-memo']);
   bridge.setReady(true);
   return { ...bridge, calls, temp, async close() {
-    if(bridge.orchestrator)await bridge.orchestrator.close();
+    bridge.reminderLedger?.close();if(bridge.orchestrator)await bridge.orchestrator.close();
     for (const timer of timers) clearTimeout(timer);
     fs.rmSync(temp, { recursive: true, force: true });
   } };

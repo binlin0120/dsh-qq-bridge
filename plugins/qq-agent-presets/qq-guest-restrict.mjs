@@ -1,4 +1,4 @@
-// 小鲸鱼访客会话（closed-agent 下机主以外的人和群）的工具硬边界。
+// 鲸鲸访客会话（closed-agent 下机主以外的人和群）的工具硬边界。
 //
 // 和 qq-tool-restrict.mjs 的区别：那边允许全部 QQ MCP 工具；这里连 QQ 工具都不给，
 // 只留联网搜索（web-search-safe 的 web_search / web_fetch；fetch 由 safe-fetch 挡掉本机和内网地址）。

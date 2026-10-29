@@ -267,5 +267,25 @@
     "maxTokens": 4096,
     "maxResults": 8,
     "timeoutMs": 35000
+  },
+  "workspaceRoot": "workspace",
+  "memoryFile": "",
+  "admins": [],
+  "draw": {
+    "baseUrl": "",
+    "apiKeyEnv": "IMAGE_API_KEY",
+    "model": "gpt-image-2",
+    "referenceFiles": [],
+    "dailyLimit": 20,
+    "imageSize": "1K",
+    "parallelDownload": false
+  },
+  "work": {
+    "enabled": false
+  },
+  "orchestration": {
+    "enabled": true,
+    "shortChain": true,
+    "accepting": true
   }
 }

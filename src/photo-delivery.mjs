@@ -33,7 +33,7 @@ export function mediaFailure(error,j){
  return {status:j.taskId||j.resultUrl?'failed':'uncertain',phase:j.phase||'failed',retryable:false,code:code||'IMAGE_FAILED'};
 }
 export async function preparePhotoReferences({files,cacheDir,scriptPath,validate,run}={}){
- const execute=run||((args)=>new Promise((resolve,reject)=>execFile('python3',[scriptPath,JSON.stringify(args)],{timeout:30000,maxBuffer:64000},(e,out)=>e?reject(Object.assign(Error('角色照片参考准备失败'),{code:'IMAGE_REFERENCE_INVALID'})):resolve(out))));
+ const execute=run||((args)=>new Promise((resolve,reject)=>execFile(process.env.PYTHON_BIN||(process.platform==='win32'?'python':'python3'),[scriptPath,JSON.stringify(args)],{timeout:30000,maxBuffer:64000},(e,out)=>e?reject(Object.assign(Error('角色照片参考准备失败'),{code:'IMAGE_REFERENCE_INVALID'})):resolve(out))));
  const report=JSON.parse(await execute({files,cacheDir}));
  const images=report.references.map(r=>{const actual=fs.realpathSync(r.file);if(!actual.startsWith(fs.realpathSync(cacheDir)+path.sep))throw Error('Reference cache path invalid');const b=fs.readFileSync(actual);if(b.length>768*1024||crypto.createHash('sha256').update(b).digest('hex')!==r.sha256)throw Error('Reference cache integrity check failed');validate?.(b);return 'data:image/jpeg;base64,'+b.toString('base64');});
  if(images.length!==2||images.reduce((n,x)=>n+x.length,0)>513*1024)throw Object.assign(Error('角色照片参考超过上传预算'),{code:'IMAGE_REFERENCE_INVALID'});

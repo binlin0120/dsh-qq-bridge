@@ -46,7 +46,7 @@ test('archive keeps every record beyond rolling chat limit, per contact, and see
  const chunks=chunkRecords(list,500);assert.equal(chunks.flat().length,900);assert.equal(chunks.flat()[0].text,'item 0');
 });
 test('known sensitive number/key categories are redacted before archive',()=>{
- const input='110101200001010010 13812345678 sk-abcdefghijklmnopqrst';const clean=scrubPrivate(input);
+ const input='110101200001010010 13812345678 '+'sk-'+'abcdefghijklmnopqrst';const clean=scrubPrivate(input);
  assert.equal(clean.includes('13812345678'),false);assert.equal(clean.includes('110101200001010010'),false);assert.equal(clean.includes('sk-'),false);
 });
 test('restart resumes polling task ID and never resubmits ambiguous submission/send',async()=>{
@@ -63,6 +63,6 @@ test('corrupt persisted state fails closed rather than wiping stored quota',()=>
 });
 test('memo parser accepts complete JSON with preamble/fence but never partial plain notes',()=>{
  assert.deepEqual(parseMemoObject('任务：整理\n```json\n{"memory":"含{括号}与\\\"引号","handoff":"ok"}\n```'),{memory:'含{括号}与"引号',handoff:'ok'});
- assert.throws(()=>parseMemoObject('任务：整理小鲸鱼的笔记\n- 这是正文'));
+ assert.throws(()=>parseMemoObject('任务：整理鲸鲸的笔记\n- 这是正文'));
  assert.throws(()=>parseMemoObject('{"memory":"truncated'));
 });

@@ -5,7 +5,7 @@ import {readState,writeState,shDate,scrubPrivate,parseMemoObject} from './reliab
 import {DockerSandbox} from './work-sandbox.mjs';
 export const validQQ=(...xs)=>xs.map(String).find(x=>/^[1-9]\d{4,11}$/.test(x))||'';
 export const LIFE_PHOTO=/你(?:现在|这会儿)?在(?:干嘛|干什么|做什么)|你干嘛呢|现在忙啥|在忙什么|^(?:在干嘛|干嘛呢|干啥呢|在干什么|在做什么)[呀啊呢吗？?！!，,。\s]*$/;
-export const PHOTO_LOOK='成年虚构角色小鲸鱼，18岁中国女大学生，齐肩微卷黑发、细边圆框眼镜、自然五官；自然真实的手机生活照片风格，随手拍构图，不是插画或动漫，不加文字水印。有人物时仅小鲸鱼一个人，不生成其他人物，不冒充现实朋友；拍食物、书桌、物品时可以不露脸，不强行自拍。常见场景是温暖卧室、书桌与橘猫，米白宽松针织开衫；服装与场景按当前日常合理变化，保持同一人物外观。';
+export const PHOTO_LOOK='成年虚构角色鲸鲸，18岁中国女大学生，齐肩微卷黑发、细边圆框眼镜、自然五官；自然真实的手机生活照片风格，随手拍构图，不是插画或动漫，不加文字水印。有人物时仅鲸鲸一个人，不生成其他人物，不冒充现实朋友；拍食物、书桌、物品时可以不露脸，不强行自拍。常见场景是温暖卧室、书桌与橘猫，米白宽松针织开衫；服装与场景按当前日常合理变化，保持同一人物外观。';
 export class CapabilityState {
  constructor(file,role){this.file=file;this.role=role;this.data=readState(file,{version:1,roles:{},epochs:{},paused:{},photos:{},collect:{},recent:{},deliveries:[]});}
  save(){writeState(this.file,this.data);}
