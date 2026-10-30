@@ -42,6 +42,7 @@ npm start
 ## 发布前检查
 
 ```sh
+python -m pip install -r requirements-test.txt
 npm test
 npm run privacy-scan
 git status --short

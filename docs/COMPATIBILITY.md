@@ -1,6 +1,6 @@
 # 运行与升级兼容性
 
-- Node.js >=22.13，CI 在 Node 22/24、Windows/Linux 中从空目录执行 npm ci。
+- Node.js >=22.13，CI 在 Node 22/24、Windows/Linux 中从空目录执行 npm ci。图片夹具测试另需 Python 3 与 `requirements-test.txt` 中固定版本的 Pillow；CI 显式安装 Python 3.12 和该测试依赖，使用 `PYTHON_BIN=python`。
 - 必须保留仓库 .npmrc（legacy-peer-deps=true）。锁文件和这一安装选项共同定义依赖树。
 - 直接运行依赖采用确切版本；预发布 apiproxy 固定为 0.1.1-rc.2，不能用浮动范围更新。
 - SnowLuma 1.14.20 发布包含缺失 ESM 扩展名的导入。postinstall 根据 snowluma-patches.json 的版本和逐文件 SHA-256 修复；重复执行幂等，未知版本或内容在写入前失败。

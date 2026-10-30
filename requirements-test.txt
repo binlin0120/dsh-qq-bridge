@@ -1,0 +1,2 @@
+# Offline photo-reference fixtures use the same imaging library as deployment.
+Pillow==12.3.0
