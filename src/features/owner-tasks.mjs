@@ -1,19 +1,21 @@
 // owner-tasks: explicit live dependencies preserve shared state and authority boundaries.
-export const dependencies=["CONVERSATION_STYLE","ROOT","STATE_DIR","api","appendToolLog","beijingTime","buildProgressPrompt","cancelPendingEntry","cfg","closedAgentPreset","createTurnCollector","crypto","currentMode","dshReady","ensureChatModel","fs","handleCompanionActions","isOwnerKey","loadGuestChat","log","mediaJobs","memoryHistory","modePreset","noteOutsideShare","orchestrationTurn","orchestrator","ownerChat","ownerMemoryScope","ownerTaskResource","path","photoPublicReply","pinInternalTitle","progressBlock","pumpingOwnerTasks","readSessionLogLines","resolveMediaList","resolveOutboxPath","resolvePresetName","runMemoPrompt","safeFileName","sayBridge","scrubPrivate","sendEpochs","sendFileTo","shortChain","state","stopIntent","taskCanDeliver","taskCollectors","taskProgress","taskSessions","temporal","turnProgress","unwrap","validateNarration","withSlangContext","withoutProgress","yaml"];
+export const dependencies=["buildConversationPersona","groupPolicies","CONVERSATION_STYLE","ROOT","STATE_DIR","api","appendToolLog","beijingTime","buildProgressPrompt","cancelPendingEntry","cfg","closedAgentPreset","createTurnCollector","crypto","currentMode","dshReady","ensureChatModel","fs","handleCompanionActions","isOwnerKey","loadGuestChat","log","mediaJobs","memoryHistory","modePreset","noteOutsideShare","orchestrationTurn","orchestrator","ownerChat","ownerMemoryScope","ownerTaskResource","path","photoPublicReply","pinInternalTitle","progressBlock","pumpingOwnerTasks","readSessionLogLines","resolveMediaList","resolveOutboxPath","resolvePresetName","runMemoPrompt","safeFileName","sayBridge","scrubPrivate","sendEpochs","sendFileTo","shortChain","state","stopIntent","taskCanDeliver","taskCollectors","taskProgress","taskSessions","temporal","turnProgress","unwrap","validateNarration","withSlangContext","withoutProgress","yaml"];
 export function createOwnerTasks(deps){
-function readConversationPersona(preset){
+function readConversationPersona(preset,{key,actorRole}={}){
     const source=deps.fs.readFileSync(deps.path.join(deps.ROOT,'plugins/qq-agent-presets/presets/'+preset+'.patch.yml'),'utf8');
     const schema=deps.yaml.DEFAULT_SCHEMA.extend([new deps.yaml.Type('tag:yaml.org,2002:js',{kind:'scalar',construct:value=>String(value)})]);
     const document=deps.yaml.load(source,{schema});const entry=(Array.isArray(document)?document:[]).flatMap(x=>x.insert||[]).find(x=>x.config?.id===preset);
     const prefix=entry?.config?.plugins?.find(x=>x.id==='persona')?.config?.prefix;
     if(typeof prefix!=='string'||prefix.length<100)throw Error('完整会话人设未加载，拒绝退回通用身份');
-    return prefix+'\n'+deps.CONVERSATION_STYLE;
+    const target=key??(preset==='jingjing-guest'?'':'private:'+deps.cfg.ownerQQ);
+    const base=deps.fs.readFileSync(deps.path.join(deps.ROOT,'roles/共享人格.md'),'utf8');
+    return deps.buildConversationPersona({base,privatePersona:prefix,key:target,actorRole:actorRole??(deps.isOwnerKey(target)?'owner':'guest'),groupPolicy:target.startsWith('group:')?deps.groupPolicies.get(target):{}});
   }
 
 async function renderTaskNotice(j,event){
     let persona;
     const owner=deps.isOwnerKey(j.key);const preset=owner?'dafeiyu':'jingjing-guest';
-    persona=readConversationPersona(preset);
+    persona=readConversationPersona(preset,{key:j.key,actorRole:owner?'owner':'guest'});
     const history=owner?deps.ownerChat:j.key?deps.loadGuestChat(j.key):[];
     persona+='\n'+deps.temporal.context(j.key,{history});
     const recent=history.slice(-6).map(({at,dir,text})=>({at:deps.beijingTime(at),dir,text:String(text).slice(0,900)}));

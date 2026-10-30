@@ -1,5 +1,6 @@
 import {QqRequestService} from './qq-requests.mjs';
 import {CONVERSATION_STYLE} from './conversation-style.mjs';
+import {buildConversationPersona} from './conversation-persona.mjs';
 import {createSocialPublishing} from './features/social-publishing.mjs';
 import {createStickers} from './features/stickers.mjs';
 import {createVoice} from './features/voice.mjs';
@@ -1664,6 +1665,8 @@ async function main() {
   });
   const {readConversationPersona,renderTaskNotice,taskEvent,deliverTaskResult,launchOwnerTask,reconcileOwnerTasks,pumpOwnerTasks,replyWhileToolsRun,handleTaskRequest,photoStatusReply,handleUrgentStop,handleTaskControl}=createOwnerTasks({
     get CONVERSATION_STYLE(){return CONVERSATION_STYLE;},
+    get buildConversationPersona(){return buildConversationPersona;},
+    get groupPolicies(){return groupPolicies;},
     get ROOT(){return ROOT;},
     get STATE_DIR(){return STATE_DIR;},
     get api(){return api;},
@@ -2852,6 +2855,7 @@ async function main() {
     get queued(){return queued;},
     get queuedHintAt(){return queuedHintAt;},
     get readRoleState(){return readRoleState;},
+    get readConversationPersona(){return readConversationPersona;},
     get recallContext(){return recallContext;},
     get relayNotes(){return relayNotes;},
     get replyWhileToolsRun(){return replyWhileToolsRun;},
@@ -3598,10 +3602,10 @@ async function main() {
 
   if(orchestrator&&orchestrationMode.shortChain===true){
     const ownerKey=`private:${cfg.ownerQQ}`;
-    const publicPersona=()=>{
-      let p=readConversationPersona(closedAgentPreset||'dafeiyu');
+    const publicPersona=c=>{
+      let p=readConversationPersona(closedAgentPreset||'dafeiyu',{key:c.origin,actorRole:'owner'});
       p=p.replace(/【(?:协作能力事实|你在哪儿聊天|干活)】[^]*?(?=【|$)/g,'');
-      return p+'\n【本轮唯一执行契约】能力以本轮结构化清单为准。你是鲸鲸，与机主关系不变，场合由本次origin决定；公开群不能谈私聊内容。任务可并行、主人群内可派活；直接操作由桥接执行，长任务交后台。没有执行回执不说完成。';
+      return p+'\n【本轮唯一执行契约】能力以本轮结构化清单为准。场合由本次origin决定；熟悉自然的口吻不改变权限，公开群不能谈私聊内容或专属关系。任务可并行、主人群内可派活；直接操作由桥接执行，长任务交后台。没有执行回执不说完成。';
     };
     const history=c=>memoryHistory(c.origin,c.origin===ownerKey?ownerChat:loadGuestChat(c.origin)).slice(-12).map(({id,dir,who,text,at})=>({id,dir,who,text:String(text).slice(0,1000),at}));
     shortChain=new ChainService({store:orchestrator.store,reminderLedger,deadlineMs:Number(cfg.reliability.requestTimeoutMs)||120000,

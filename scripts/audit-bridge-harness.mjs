@@ -1,5 +1,6 @@
 import {QqRequestService} from '../src/qq-requests.mjs';
 import {CONVERSATION_STYLE} from '../src/conversation-style.mjs';
+import {buildConversationPersona} from '../src/conversation-persona.mjs';
 import * as dshProtocolLib from '../src/dsh-protocol.mjs';
 import * as accessPolicyLib from '../src/access-policy.mjs';
 import * as operationDeadlineLib from '../src/operation-deadline.mjs';
@@ -60,6 +61,7 @@ export async function bridgeHarness({ config = {}, savedState, files = {}, globa
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'qq-audit-bridge-'));
   fs.mkdirSync(path.join(temp, 'src'));
   fs.mkdirSync(path.join(temp, 'state'));
+  fs.mkdirSync(path.join(temp,'roles'));fs.copyFileSync(path.join(root,'roles/共享人格.md'),path.join(temp,'roles/共享人格.md'));
   fs.mkdirSync(path.join(temp,'plugins/qq-agent-presets/presets'),{recursive:true});
   for(const name of ['dafeiyu','jingjing-owner-chat','jingjing-guest','jingjing-memo','jingjing-worker'])fs.copyFileSync(path.join(root,'plugins/qq-agent-presets/presets/'+name+'.patch.yml'),path.join(temp,'plugins/qq-agent-presets/presets/'+name+'.patch.yml'));
   fs.writeFileSync(path.join(temp, 'config.json'), JSON.stringify({
@@ -215,7 +217,7 @@ export async function bridgeHarness({ config = {}, savedState, files = {}, globa
     discoverDshLaunchToken: () => '', unwrap, createTurnCollector,
     ...markdown, ...sensitive, ...wait, ...safeFetch, ...forward, ...slang, ...sticker,
     ...modelPrices, ...tokenLedger, ...voiceLib, ...stateAcl, ...presetPrompt, ...reliability, ...roleCard, ...capabilities, ...memoryBookLib, ...groupContextLib, ...taskProgressLib, ...imageDownloadLib, ...imageResultLib, ...progressNarratorLib, ...outboxLib, ...memoryQueueLib, ...episodicStoreLib, ...episodicRetrievalLib, ...episodicConsolidatorLib, ...temporalLib, ...invocationLib, ...parallelDownloadLib, ...companionGateLib, ...socialPublishingLib,
-    QqRequestService,CONVERSATION_STYLE,...dshProtocolLib,...accessPolicyLib,...operationDeadlineLib,...reminderLib,...photoDeliveryLib,submitImageTask:async()=>{throw Error('Fixture image submission requires an explicit test transport');},...chainLib,Orchestrator,OwnerMaintenanceBroker,stopIntent,taskCanDeliver,parseAgentObject,classifyModelError,
+    QqRequestService,buildConversationPersona,CONVERSATION_STYLE,...dshProtocolLib,...accessPolicyLib,...operationDeadlineLib,...reminderLib,...photoDeliveryLib,submitImageTask:async()=>{throw Error('Fixture image submission requires an explicit test transport');},...chainLib,Orchestrator,OwnerMaintenanceBroker,stopIntent,taskCanDeliver,parseAgentObject,classifyModelError,
     ...serviceVoiceLib,composeServiceReply:async ({facts})=>facts.text,
     TaskProgress: class extends taskProgressLib.TaskProgress { constructor(file,options){super(file,{...options,render:async(j,facts)=>j.stage||JSON.stringify(facts)});} },
     // ACL 收紧会 spawn icacls 去改**真实**文件系统；测试不该做这件事（同理见下面的

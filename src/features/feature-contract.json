@@ -209,11 +209,11 @@
   },
   "readConversationPersona": {
     "file": "owner-tasks.mjs",
-    "sha256": "045ced6d1b84f989f4650d02ef02d09ba9cc4f3a243fb79e6e0d95e8f2e8aeb7"
+    "sha256": "5ade054ef6204c6fc7fc51638921166a623f7f12a13d819e4a7125cb0b84c4ec"
   },
   "renderTaskNotice": {
     "file": "owner-tasks.mjs",
-    "sha256": "fb19650313f4486619cbc7122fac93702a112e0ce885b67235f0e8a8465a2e77"
+    "sha256": "f1a8728895b61b4207b2a266e7294224a574f69f0ec3400127e312f5b6537e40"
   },
   "taskEvent": {
     "file": "owner-tasks.mjs",
@@ -1321,7 +1321,7 @@
   },
   "handleIncoming": {
     "file": "incoming.mjs",
-    "sha256": "a4fb1e838e3f2b7bc0ae0ab8a6f96dca67f83ad9d82472d340791e5242ba1154"
+    "sha256": "28b542d953ddc11c3719ea6f0a4f914c7cb91fcc2331966bf04dd3fba34d91d1"
   },
   "cancelPendingEntry": {
     "file": "approvals.mjs",
