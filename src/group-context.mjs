@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import {readState,writeState} from './reliability.mjs';
+import {shDate,readState,writeState} from './reliability.mjs';
 
 // Only public, typed fields can cross from the owner's private chat to a group.
 export class GroupPolicy {
@@ -44,10 +44,11 @@ export function bareMention(event) {
 export function mediaIntent(text) {
   const t=String(text).trim();
   if(/不要|别发|不发|(?<!能)不能|能不能.*(?:权限|限制)|是否支持|怎么实现|方案|修改代码/.test(t))return null;
-  if(/(?:可以|能不能|可不可以|能否|支持|允许).*(?:照片|自拍|生活照|表情)/.test(t)&&!/(?:给我|给大家|帮我|一张|一个|发张|拍张|来张|想看|我想|请)/.test(t))return null;
-  if(!/(?:发|来|拍|分享|看看|看下|看一|想看|要一)/.test(t))return null;
+  if(/(?:可以|能不能|可不可以|能否|能|支持|允许).*(?:照片|自拍|生活照|表情|图片|美女图|风景图)/.test(t)&&!/(?:给我|给大家|帮我|一张|一个|发张|拍张|来张|想看|我想|请)/.test(t))return null;
+  if(!/(?:发|来|拍|生成|画|分享|看看|看下|看一|想看|要一)/.test(t))return null;
   if(/表情(?:包)?/.test(t))return 'sticker';
   if(/照片|自拍|生活照/.test(t))return 'photo';
+  if(/图片|生图|画一张|画张|风景图|美女图/.test(t)&&/(?:生成|画|(?:发|来|拍)(?:给我|给大家)?(?:张|个|一张|一幅|幅|图片))/.test(t))return 'photo';
   return null;
 }
 export function cardSummary(raw) {
@@ -63,16 +64,32 @@ export function cardSummary(raw) {
   }catch{return '[卡片消息，格式无法解析]';}
 }
 export class GroupMediaAuthority {
-  constructor(file,owner,allowed,generation=()=>0) {Object.assign(this,{file,owner,allowed,generation});this.data=readState(file,{});}
+  constructor(file,owner,allowed,generation=()=>0,memberPolicy=()=>({enabled:false,perDay:1}),clock=Date.now) {Object.assign(this,{file,owner,allowed,generation,memberPolicy,clock});this.data=readState(file,{});}
   issue({actor,sourceKey,sourceId,target,action,text}) {
     if(String(actor)!==String(this.owner())||!sourceId||!this.allowed(target)||!['photo','sticker'].includes(action))throw Error('群媒体仅接受owner本次明确指令');
     const old=Object.values(this.data).find(x=>x.sourceKey===sourceKey&&x.sourceId===sourceId&&x.target===target&&x.action===action);if(old)return old;
     const a={id:crypto.randomUUID(),actor:String(actor),sourceKey,sourceId:String(sourceId),target,action,generation:this.generation(target),text:String(text).slice(0,1200),at:Date.now()};
     this.data[a.id]=a;writeState(this.file,this.data);return a;
   }
+  memberCount(actor) {return Object.values(this.data).filter(x=>x.kind==='member'&&x.actor===String(actor)&&x.chargedDay===shDate(this.clock())).length;}
+  issueMember({actor,sourceKey,sourceId,target,text}) {
+    const policy=this.memberPolicy();
+    if(!policy.enabled||!Number.isInteger(policy.perDay)||policy.perDay<1||!/^group:[1-9]\d{4,11}$/.test(target)||sourceKey!==target||!this.allowed(target)||!sourceId||!/^[1-9]\d{4,11}$/.test(String(actor))||String(actor)===String(this.owner())||mediaIntent(text)!=='photo'||/他说|她说|转述|引用|如果|假如|[“”「」"]/.test(text))throw Error('请在群里直接告诉我想看什么图片');
+    const old=Object.values(this.data).find(x=>x.kind==='member'&&x.actor===String(actor)&&x.sourceKey===sourceKey&&x.sourceId===String(sourceId));if(old)return this.assert(old,target,'photo');
+    if(this.memberCount(actor)>=policy.perDay)throw Error('你今天的图片已经拍过啦，明天再来吧');
+    const a={kind:'member',id:crypto.randomUUID(),actor:String(actor),sourceKey,sourceId:String(sourceId),target,action:'photo',generation:this.generation(target),text:String(text).slice(0,1200),at:this.clock()};
+    const next={...this.data,[a.id]:a};writeState(this.file,next);this.data=next;return a;
+  }
+  admitMember(auth,target) {
+    const saved=this.assert(auth,target,'photo');if(saved.kind!=='member'||saved.chargedDay)return;
+    if(this.memberCount(saved.actor)>=this.memberPolicy().perDay)throw Error('你今天的图片已经拍过啦，明天再来吧');
+    const admitted={...saved,chargedDay:shDate(this.clock())},next={...this.data,[saved.id]:admitted};
+    writeState(this.file,next);this.data=next;Object.assign(auth,admitted);
+  }
   assert(auth,target,action) {
     const saved=auth&&this.data[auth.id];
-    if(!saved||saved.actor!==String(this.owner())||saved.target!==target||saved.action!==action||saved.generation!==this.generation(target)||!this.allowed(target)||JSON.stringify(saved)!==JSON.stringify(auth))throw Error('群聊媒体授权已失效或群不在名单内');
+    const member=saved?.kind==='member';const permitted=member?(this.memberPolicy().enabled&&this.memberPolicy().perDay>0&&saved.sourceKey===target&&action==='photo'&&saved.actor!==String(this.owner())):saved?.actor===String(this.owner());
+    if(!saved||!permitted||saved.target!==target||saved.action!==action||saved.generation!==this.generation(target)||!this.allowed(target)||JSON.stringify(saved)!==JSON.stringify(auth))throw Error('群聊媒体授权已失效或群不在名单内');
     return saved;
   }
 }

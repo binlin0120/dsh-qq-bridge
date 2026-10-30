@@ -1,0 +1,373 @@
+{
+  "schema": 1,
+  "tests": {
+    "test-agent-preset-patches.mjs": {
+      "tier": "integration",
+      "reason": "Requires separately installed DSH preset artifacts."
+    },
+    "test-audit-bridge.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-audit-protocol-helpers.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-audit-protocol.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-audit-regressions.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-audit-security-mcp.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-audit-security.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-audit-setup-guards.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-audit-setup.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-audit.mjs": {
+      "tier": "aggregate",
+      "reason": "Delegates to this registry; never recurse."
+    },
+    "test-capabilities.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-chatfix.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-console-encoding.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-console-static.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-console-ui.mjs": {
+      "tier": "integration",
+      "reason": "Requires running console and browser environment."
+    },
+    "test-console.mjs": {
+      "tier": "integration",
+      "reason": "Mutates a running console configuration."
+    },
+    "test-dependency-imports.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-dsh-auth.mjs": {
+      "tier": "integration",
+      "reason": "Requires live DSH credentials and service."
+    },
+    "test-dsh-contract.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-dsh-inbox-projection.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-dsh-session-retire.mjs": {
+      "tier": "integration",
+      "reason": "Creates and retires live DSH sessions."
+    },
+    "test-dsh-v2-wait.mjs": {
+      "tier": "integration",
+      "reason": "Creates live model turns."
+    },
+    "test-encoding.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-episodic-memory.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-finalfix.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-forward.mjs": {
+      "tier": "integration",
+      "reason": "Legacy environment probe; explicitly select after checking service prerequisites."
+    },
+    "test-group-context.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-hardening.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-image-download.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-image-ip-routes.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-image-upload-routes.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-issue-regressions.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-livefix.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-mcp-exec.mjs": {
+      "tier": "integration",
+      "reason": "Calls a configured live OneBot service."
+    },
+    "test-mcp-host.mjs": {
+      "tier": "integration",
+      "reason": "Reads local host process status."
+    },
+    "test-mcp-safe.mjs": {
+      "tier": "integration",
+      "reason": "Calls configured MCP execution tools."
+    },
+    "test-mcp-servers-stdio.mjs": {
+      "tier": "integration",
+      "reason": "Starts environment-dependent host MCP adapters."
+    },
+    "test-mcp-web-search.mjs": {
+      "tier": "integration",
+      "reason": "Uses live network search."
+    },
+    "test-md-to-plain.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-media-search.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-memory-book.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-mux-reconnect.mjs": {
+      "tier": "audit",
+      "reason": "Offline fake WebSocket; no real DSH, model invocation or network requests."
+    },
+    "test-onebot-connection.mjs": {
+      "tier": "integration",
+      "reason": "Connects a configured live OneBot gateway."
+    },
+    "test-orchestrator.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-owner-maintenance.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-persona-social.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-photo-repair.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-portable-deployment.mjs": {
+      "tier": "release",
+      "reason": "Public artifact and deployment contract."
+    },
+    "test-preset-local-tools.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-preset-prompt.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-qq-mode-plugin.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-qq-model-view.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-qq-preset-contract.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-release-privacy.mjs": {
+      "tier": "release",
+      "reason": "Public artifact and deployment contract."
+    },
+    "test-reliability-bridge.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-reliability.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-reminder-contract.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-reply-wait.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-resetfix.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-role-card.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-rootfix.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-runtime-recovery.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-service-voice.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-setup-dsh-idempotent.mjs": {
+      "tier": "integration",
+      "reason": "Legacy environment probe; explicitly select after checking service prerequisites."
+    },
+    "test-slang-learn.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-snowluma-conn.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-snowluma-patches.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-snowluma-upstream-health.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-sticker-autonomy.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-stickers.mjs": {
+      "tier": "integration",
+      "reason": "Legacy environment probe; explicitly select after checking service prerequisites."
+    },
+    "test-stop-delivery.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-task-progress.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-token-economy.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-token-usage.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-v2-initial-prompt.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-v2-wait.mjs": {
+      "tier": "integration",
+      "reason": "Legacy environment probe; explicitly select after checking service prerequisites."
+    },
+    "test-vision-media.mjs": {
+      "tier": "integration",
+      "reason": "Legacy environment probe; explicitly select after checking service prerequisites."
+    },
+    "test-voice-edge.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-voice-gui.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-voice-preview.mjs": {
+      "tier": "integration",
+      "reason": "Requires a running external voice GUI."
+    },
+    "test-voice-system.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-voice-volume.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-voice.mjs": {
+      "tier": "audit",
+      "reason": "Offline fixtures; optional external sections remain disabled."
+    },
+    "test-wakefix.mjs": {
+      "tier": "features",
+      "reason": "Mock services and isolated temporary state."
+    },
+    "test-module-boundaries.mjs": {
+      "tier": "features",
+      "reason": "AST contract verifies behavior-preserving module extraction and entry boundaries."
+    },
+    "test-mux-concurrency.mjs": {
+      "tier": "audit",
+      "reason": "Offline mock websocket regression for concurrent notice/main streams."
+    },
+    "test-conversation-style.mjs": {
+      "tier": "features",
+      "reason": "Offline shared style injection and private persona/authority separation."
+    },
+    "test-guest-photo-quota.mjs": {
+      "tier": "features",
+      "reason": "Offline durable guest image quota, owner exemption and group authorization regression."
+    },
+    "test-qq-request-service.mjs": {
+      "tier": "features",
+      "reason": "Offline request receipt notifications, approval identity and platform readback regression."
+    },
+    "test-private-task-result.mjs": {
+      "tier": "features",
+      "reason": "Offline internal report privacy, result narration and late cancellation regression."
+    },
+    "test-session-memory-continuity.mjs": {
+      "tier": "features",
+      "reason": "Offline replacement prompt carries durable scoped memory and live request facts."
+    },
+    "test-group-member-photos.mjs": {
+      "tier": "features",
+      "reason": "Offline member identity, durable per-person cross-group daily quota and owner exemption fixtures."
+    }
+  }
+}

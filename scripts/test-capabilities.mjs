@@ -23,9 +23,11 @@ test('demotion cancels queued work, revokes old epoch and keeps ordinary chat',(
  h.rosterUpdate('add','admins',23456);const epoch=h.caps.epoch('private:23456');const j=h.work.submit('private:23456','test');
  h.rosterUpdate('remove','admins',23456);await h.work.reconcile();assert.equal(j.status,'cancelled');assert.equal(h.capabilityRole('private:23456'),'user');assert.throws(()=>h.caps.assertWork('private:23456',epoch));
 }));
-test('photo markers use a shared selfie character prompt and have no daily quota',()=>withBridge(async h=>{
+test('photo markers preserve character, cap visitors and keep owner unlimited',()=>withBridge(async h=>{
  for(let i=0;i<25;i++)await h.handleCompanionActions('private:23456',`【发照片：在书桌前 ${i}】`);
- assert.equal(Object.keys(h.mediaJobs.data).length,25);const j=Object.values(h.mediaJobs.data)[0];assert.equal(j.character,true);assert.match(j.prompt,/齐肩微卷黑发/);assert.equal(j.caption,'');assert.equal(h.cfg.usageLimits,false);
+ assert.equal(Object.keys(h.mediaJobs.data).length,h.cfg.guestPhotos.perDay);
+ for(let i=0;i<25;i++)await h.handleCompanionActions('private:12345',`【发照片：主人书桌 ${i}】`);
+ assert.equal(Object.keys(h.mediaJobs.data).length,h.cfg.guestPhotos.perDay+25);const j=Object.values(h.mediaJobs.data)[0];assert.equal(j.character,true);assert.match(j.prompt,/齐肩微卷黑发/);assert.equal(j.caption,'');assert.equal(h.cfg.usageLimits,false);
  const r=await h.handleCompanionActions('group:45678','【发照片：卧室】');assert.match(r,/群聊/);
 }));
 test('sticker request never submits a drawing even when inventory has no match',()=>withBridge(async h=>{
@@ -60,7 +62,7 @@ test('restart does not revoke queued work during initial mode discovery',async()
  h=await bridgeHarness({config,files});try{await h.work.reconcile();assert.equal(Object.values(h.work.jobs)[0].status,'queued');h.setMode('closed-agent');h.caps.reconcile(h.capabilityKeys());await h.work.reconcile();assert.equal(Object.values(h.work.jobs)[0].status,'queued');}finally{await h.close();}
 });
 
-test('character photos reject named real contacts instead of drawing them',()=>withBridge(async h=>{await assert.rejects(h.queueCharacterPhoto('private:23456','鲸鲸和扶摇一起拍两个人的合照'),/换个日常/);assert.equal(Object.keys(h.mediaJobs.data).length,0);}));
+test('character photos reject named real contacts instead of drawing them',()=>withBridge(async h=>{await assert.rejects(h.queueCharacterPhoto('private:23456','鲸鲸和真实朋友一起拍两个人的合照'),/换个日常/);assert.equal(Object.keys(h.mediaJobs.data).length,0);}));
 
 test('model placeholder work marker uses actual trailing requirements and rejects empty templates',()=>withBridge(async h=>{
  h.rosterUpdate('add','admins',23456);const answer=await h.handleCompanionActions('private:23456','【工作：完整需求】\n输入sample.csv，按姓名去重，保留第一行，输出CSV');const j=Object.values(h.work.jobs)[0];assert.match(j.task,/按姓名去重/);assert.match(answer,/排队/);const before=Object.keys(h.work.jobs).length;const no=await h.handleCompanionActions('private:23456','【工作：完整需求】');assert.equal(Object.keys(h.work.jobs).length,before);assert.match(no,/描述不完整/);

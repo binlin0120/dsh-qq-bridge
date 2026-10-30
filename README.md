@@ -1,6 +1,6 @@
 # DSH-QQ Bridge · DSH-QQ 任务桥（QQ ↔ DeepSeek Harness）
 
-> 当前可迁移版本已包含持久化提醒、短链路能力执行、任务取消及照片投递恢复。首次部署、目录与记忆配置、图片服务协议和验证范围见 [可迁移部署说明](docs/guides/PORTABLE_DEPLOYMENT.md)。私有配置、会话、记忆、音频和角色参考图不随仓库提供。
+> 当前可迁移版本已包含持久化提醒、分层记忆、故障恢复、好友申请回读与群友图片日额度。更新与升级注意事项见 [发布说明](docs/RELEASE_NOTES.md)，开发结构见 [架构说明](docs/ARCHITECTURE.md)。首次部署、目录与记忆配置、图片服务协议和验证范围见 [可迁移部署说明](docs/guides/PORTABLE_DEPLOYMENT.md)。私有配置、会话、记忆、音频和角色参考图不随仓库提供。
 
 **English**: [README.en.md](README.en.md) | **中文**: [README.md](README.md)
 
@@ -17,7 +17,7 @@
 ```bash
 git clone https://github.com/binlin0120/dsh-qq-bridge.git
 cd dsh-qq-bridge
-npm install
+npm ci
 cp config.example.json config.json   # Windows 用 copy config.example.json config.json
 # 编辑 config.json：填 snowluma 的 wsUrl / httpUrl / accessToken，以及 allow.private / allow.groups（你自己的 QQ 号 / 群号）
 node scripts/setup-dsh.mjs   # 装 DSH 端 preset + MCP，装完必须重启 DSH
@@ -29,7 +29,7 @@ npm start                    # Windows 想崩溃自动重启，改双击 start.b
 `config.example.json` 里键很多，但第一次跑起来只用改下面这些，剩下的保持默认值就能用，后面想调再去控制台或对应文档里改：
 
 - **必须填**：`snowluma.wsUrl`（默认 `ws://127.0.0.1:3001`）、`snowluma.httpUrl`、`snowluma.accessToken`（SnowLuma 那边的接入地址和令牌）；`ownerQQ`（机主自己的 QQ 号）；`allow.private`（允许私聊的 QQ 号列表）、`allow.groups`（允许的群号列表）。
-- **必须保持**：`allowAllWhenEmpty` 保持 `false`。改成 `true` 会让白名单为空时所有私聊和群聊都能触发 agent，非常危险，不要开。
+- **必须保持**：`allowAllWhenEmpty` 保持 `false`。该兼容字段已停用：设为 `true` 时拒绝启动或拒绝保存，空名单不会放行普通会话。
 - **一般不用改**：`dsh.baseUrl`（默认 `http://127.0.0.1:3080`，本机 DSH）、`consolePort`（默认 `3100`）、`consoleToken`（留空时启动会自动生成并打印在日志里）。
 - **先不用管**：`deny.*`（黑名单，默认空）、`social` / `socialV2`（群聊仿真、发送节奏、表情、语音等调优）、`slang`（黑话学习）、`webSearch`（联网搜索）、`pricing`（花费折算）这些都是调优项，默认值已经能跑，不用逐个解释完再启动。想调某个功能时看 [docs/guides/CONFIGURATION.md](docs/guides/CONFIGURATION.md)，里面把所有已有功能、默认值、改哪里、改完要不要重启都写齐了，人设也在那篇第 3 节：改 `roles/<角色名>.md`，或控制台「人格与角色」页点选编辑。
 
@@ -148,7 +148,7 @@ DSH（DeepSeek Harness Web，智能体运行时）
 ## 安装与配置
 
 ```bash
-npm install        # 安装依赖（postinstall 会自动修补 @snowluma/sdk 的 ESM 打包 bug）
+npm ci        # 安装依赖（postinstall 会自动修补 @snowluma/sdk 的 ESM 打包 bug）
 ```
 
 复制 `config.example.json` 为 `config.json` 后编辑：
@@ -177,14 +177,14 @@ npm install        # 安装依赖（postinstall 会自动修补 @snowluma/sdk �
 | `webSearch.apiKeyEnv` / `apiKey` | 搜索凭据的环境变量名（默认 `DEEPSEEK_API_KEY`）/ 直接写死 key（不推荐）。都不设置时读 DSH 的 `$DSH_HOME/.credentials.yaml` 里同名 ref |
 | `webSearch.baseURL` / `model` / `maxUses` / `maxResults` | 搜索端点（默认 `https://api.deepseek.com/anthropic/v1`，必须 https 且解析到公网）、模型（默认 `deepseek-v4-flash`）、单次搜索最多用几次工具、返回条数上限 |
 | `workspaceTitle` | QQ 会话在 DSH 界面中的归组名称，默认「QQ 聊天」 |
-| `allow.private` / `allow.groups` | 白名单（QQ 号/群号数组）；留空且 `allowAllWhenEmpty: true` 时放行全部 |
+| `allow.private` / `allow.groups` | 白名单（QQ 号/群号数组）；空名单拒绝普通会话，拒绝名单优先 |
 | `deny.*` | 黑名单，优先于白名单 |
 | `ackMessage` | 消息投递后的立即回复，空字符串关闭 |
 | `sendDelayMs` | QQ 连续发送间隔，防止触发频率限制 |
 | `consolePort` | 本地控制台端口，默认 `3100` |
 | `consoleToken` | 控制台访问令牌；留空时启动自动生成并保存到 `state/console-token` |
 
-> ⚠️ `allowAllWhenEmpty: true` 表示「白名单没填就全部放行」——把 agent 接入 QQ 等于把账号控制权交给了模型，建议先填白名单。
+> `allowAllWhenEmpty: true` 已不受支持，启动和名单更新都会拒绝该值；请显式填写允许名单。
 
 ### DSH 端安装（必做：装 preset + 挂 MCP）
 
@@ -209,7 +209,7 @@ node scripts/setup-dsh.mjs
    ```bash
    git clone https://github.com/binlin0120/dsh-qq-bridge.git
    cd dsh-qq-bridge
-   npm install
+   npm ci
    ```
    Windows CMD 用 `copy config.example.json config.json`，其他平台用 `cp config.example.json config.json`。
    **示例模板里 `allow.private` / `allow.groups` 是空数组**——空白名单 + `allowAllWhenEmpty: false` 时桥接不响应任何消息（这是刻意的 fail-closed 默认值）。白名单在第 5 步填。
@@ -324,17 +324,7 @@ qq-bridge/
   state/                # 运行时数据（不入库）
 ```
 
-> 🎤 **独立的「发语音」工具不在这里**：它是仓库上一级的 [`../voice-tool/`](../voice-tool/)（`voice-cli.mjs` /
-> `voice-gui.mjs` / `public/voice.html` / `发语音.cmd`）。图形界面双击上一级的「发语音-图形界面.cmd」。
-> 它只依赖 SnowLuma，共享内核仍由本仓库 `src/voice-core.js` / `src/snowluma-conn.js` 提供（单一实现）。
->
-> ```bash
-> cd ../voice-tool
-> node voice-cli.mjs status     # 账号/token 自动发现 + 连通性
-> node voice-cli.mjs list       # 可发的群聊/私聊 + 语音库
-> node voice-cli.mjs            # 交互菜单
-> node voice-gui.mjs            # 图形界面（本地小服务 + 浏览器 UI）
-> ```
+> 语音发送使用仓库内的 `npm run send-voice`。可选的 `voice-cli.mjs` / `voice-gui.mjs` 属于另行安装的独立工具，本仓库不提供对应 npm 启动命令；配置与可选工具检查见 [语音说明](docs/guides/VOICE.md)。
 
 ## SnowLuma 版本与上游健康（「连上了但收不到消息」）
 

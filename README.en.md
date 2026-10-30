@@ -6,11 +6,13 @@ This portable source tree includes persistent reminders and delivery recovery. D
 
 > Connect QQ messages to DeepSeek Harness (DSH) agents: QQ friends/groups become DSH conversations, and agent replies (including questions and tool approvals) are sent back to QQ.
 
-> ⚠️ **Current release `v0.2.0-r4`, targets DSH 0.2.0-rc.2** (verified item by item on that version; run `npm run verify:adaptation`). It uses the persistent local signing key to **mint the session Cookie offline**, slash RPC endpoints and the `/api/remote.mux` event stream — a protocol generation introduced in DSH `0.1.2-alpha.1`, incompatible with the older dot-endpoint protocol. Reading the launch token out of the old guard logs has not worked since DSH 0.1.7 (the token is generated per process and never written to disk). Agent presets are `@deepseek-ai/dsh-agent-preset` Cordis rows since DSH 0.1.7 (the `~/.dsh/.agent-presets/` directory mechanism is gone). On **DSH `0.1.1-rc.2` or earlier**, use tag [`v0.1.0`](https://github.com/Derpyu520/qq-bridge/releases/tag/v0.1.0); for **DSH 0.1.5-rc.1** use [`v0.1.5`](https://github.com/Derpyu520/qq-bridge/releases/tag/v0.1.5); for **DSH 0.1.7-rc.2** use [`v0.1.7`](https://github.com/Derpyu520/qq-bridge/releases/tag/v0.1.7).
+> This maintained fork includes layered local memory, recovery, verified friend requests and a one-picture-per-member daily group quota. See [release notes](docs/RELEASE_NOTES.md), [portable deployment](docs/guides/PORTABLE_DEPLOYMENT.md) and [compatibility](docs/COMPATIBILITY.md). Private configuration, conversation state and media are excluded.
+>
+> **Upstream baseline `v0.2.0-r4`, originally targeting DSH 0.2.0-rc.2** (verified item by item on that version; run `npm run verify:adaptation`). It uses the persistent local signing key to **mint the session Cookie offline**, slash RPC endpoints and the `/api/remote.mux` event stream — a protocol generation introduced in DSH `0.1.2-alpha.1`, incompatible with the older dot-endpoint protocol. Reading the launch token out of the old guard logs has not worked since DSH 0.1.7 (the token is generated per process and never written to disk). Agent presets are `@deepseek-ai/dsh-agent-preset` Cordis rows since DSH 0.1.7 (the `~/.dsh/.agent-presets/` directory mechanism is gone). On **DSH `0.1.1-rc.2` or earlier**, use tag [`v0.1.0`](https://github.com/Derpyu520/qq-bridge/releases/tag/v0.1.0); for **DSH 0.1.5-rc.1** use [`v0.1.5`](https://github.com/Derpyu520/qq-bridge/releases/tag/v0.1.5); for **DSH 0.1.7-rc.2** use [`v0.1.7`](https://github.com/Derpyu520/qq-bridge/releases/tag/v0.1.7).
 >
 > **r4 highlights**: sticker/animated-emoji pipeline (CDN first, `emoji_id` fallback, multi-address DNS failover), web search now reuses DSH's own DeepSeek search backend (Bing only as fallback), `qq_wait_for_messages` long-polling past the 300 s undici timeout, plus fixes for the mode-switch rollback, permanent "busy" turns, missing self-identity injection and a full-project audit. Details: [Release v0.2.0-r4](https://github.com/Derpyu520/qq-bridge/releases/tag/v0.2.0-r4).
 >
-> The default branch `main` **is** this version — a plain `git clone` gets it, no branch switching needed.
+> The default branch `main` contains this maintained fork; the version references above describe its upstream baseline.
 
 For the detailed Chinese configuration guide, see **[docs/guides/CONFIGURATION.md](docs/guides/CONFIGURATION.md)**.
 The documentation index (one line per doc, with "still current?" notes) is **[docs/README.md](docs/README.md)**;
@@ -51,7 +53,7 @@ QQ messages ──► SnowLuma (OneBot v11 WS) ──► qq-bridge ──► DSH
 ## Quick Start
 
 ```bash
-npm install        # postinstall automatically patches the @snowluma/sdk ESM packaging bug
+npm ci        # postinstall automatically patches the @snowluma/sdk ESM packaging bug
 ```
 
 Copy `config.example.json` to `config.json`, then edit:
@@ -131,13 +133,11 @@ qq-bridge/
   state/                # runtime data (not in repo)
 ```
 
-The standalone **voice sender tool** (`voice-cli.mjs`, `voice-gui.mjs`, `public/voice.html`, `发语音.cmd`)
-lives in the sibling folder **`../voice-tool/`** — it only needs SnowLuma, and reuses this repo's
-`src/voice-core.js` / `src/snowluma-conn.js` as the single shared implementation.
+Use `npm run send-voice` for the built-in voice sender. The optional `voice-cli.mjs` / `voice-gui.mjs` tool is distributed separately; this repository does not ship its files or npm aliases. See [voice setup](docs/guides/VOICE.md).
 
 ## Testing
 
-`npm run test:audit` runs isolated regression tests without production credentials, DSH, or QQ messages. Token and cost details are in [docs/guides/TOKEN_USAGE_CONSOLE.md](docs/guides/TOKEN_USAGE_CONSOLE.md) (Chinese).
+`npm test` runs source checks, the registered audit/feature/release suites and a privacy scan. `npm run test:audit` runs isolated regression tests without production credentials, DSH, or QQ messages. Token and cost details are in [docs/guides/TOKEN_USAGE_CONSOLE.md](docs/guides/TOKEN_USAGE_CONSOLE.md) (Chinese).
 
 After upgrading, legacy QQ session mappings without permission metadata are recreated once. Mode or preset changes also retire the old mapping and recreate the session on the next message; DSH history is retained.
 

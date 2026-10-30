@@ -8,7 +8,7 @@ import {selectGroupContext,groupMessage,cardSummary,GroupPolicy,publicGroupPolic
 const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+k3ioAAAAASUVORK5CYII=','base64');
 const evt=(uid,text,id='m'+Math.random(),extra=[])=>({user_id:uid,self_id:99999,group_id:45678,time:Math.floor(Date.now()/1000),message_id:id,sender:{nickname:'owner'},message:[{type:'at',data:{qq:'99999'}},{type:'text',data:{text}},...extra]});
 async function fixture(fn,files={}) {
-  const h=await bridgeHarness({config:{ownerQQ:12345,allow:{private:[12345,23456],groups:[45678]},sendDelayMs:0},files});
+  const h=await bridgeHarness({config:{ownerQQ:12345,allow:{private:[12345,23456],groups:[45678]},groupPhotos:{enabled:false,perDay:1},sendDelayMs:0},files});
   try {h.setMode('closed-agent');h.setPresets(['standard','dafeiyu','jingjing-guest','jingjing-worker','jingjing-memo']);h.caps.reconcile(h.capabilityKeys());h.setSelfIdentity('大肥鱼','99999');
     const original=h.bot.request.bind(h.bot);h.bot.request=async(action,body)=>action==='get_group_list'?{status:'ok',retcode:0,data:[{group_id:45678,group_name:'测试技术群'}]}:original(action,body);
     await fn(h);

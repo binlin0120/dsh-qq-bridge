@@ -1,0 +1,3 @@
+# Keep Windows launchers byte-for-byte CRLF in clones and source archives.
+# Other source files retain their existing normalization policy.
+*.bat -text

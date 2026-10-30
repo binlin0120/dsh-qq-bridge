@@ -1,0 +1,11 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {NodeApiClient} from '../src/dsh-client.js';
+const tick=()=>new Promise(resolve=>setTimeout(resolve,5));
+test('closing an independent notice stream keeps the main mux able to follow new conversations',async()=>{
+ const original=globalThis.WebSocket,sockets=[];
+ class FakeSocket extends EventTarget{constructor(){super();this.frames=[];sockets.push(this);}send(text){this.frames.push(JSON.parse(text));}open(){this.dispatchEvent(new Event('open'));}close(){this.dispatchEvent(new Event('close'));}}
+ globalThis.WebSocket=FakeSocket;const client=new NodeApiClient('http://fixture.invalid',undefined,{});client.ensureAuth=async()=>{client.cookie='fixture';};client.invalidateAuth=()=>{};const readers=[];
+ const start=async()=>{const controller=new AbortController();const stream=client.events.mux({},controller.signal);const done=(async()=>{for await(const frame of stream){void frame;}})();readers.push({controller,done});await tick();const socket=sockets.at(-1);socket.open();await tick();return {controller,done,socket};};
+ const follows=(socket,id)=>socket.frames.filter(x=>x.endpoint==='session/follow'&&x.payload.args.request.address.sessionId===id).length;
+ try{const main=await start();client.events.follow('before-notice');assert.equal(follows(main.socket,'before-notice'),1);const notice=await start();client.events.follow('during-notice');assert.equal(follows(main.socket,'during-notice'),1,'main reader must still receive new subscriptions while notice reader is open');assert.equal(follows(notice.socket,'during-notice'),1);notice.controller.abort();await notice.done;client.events.follow('after-notice');assert.equal(follows(main.socket,'after-notice'),1,'main reader must remain subscribed after notice closes');client.events.follow('after-notice');assert.equal(follows(main.socket,'after-notice'),1,'follow stays idempotent');const second=await start();main.controller.abort();await main.done;client.events.follow('after-main-close');assert.equal(follows(second.socket,'after-main-close'),1);assert.equal(follows(second.socket,'before-notice'),1,'new reader replays desired subscriptions');}
+ finally{for(const reader of readers)reader.controller.abort();await Promise.allSettled(readers.map(x=>x.done));globalThis.WebSocket=original;}
+});

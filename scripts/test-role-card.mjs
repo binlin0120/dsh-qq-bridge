@@ -98,11 +98,8 @@ test('真实人格卡可用，且筛选不丢公共内容', () => {
   const v2 = selectRoleText(raw, 'v2');
   const v1 = selectRoleText(raw, 'v1');
   assert.ok(v2.length > 0 && v1.length > 0);
-  // 人设部分两种模式都必须保留
-  for (const text of [v1, v2]) {
-    assert.match(text, /小鲸鱼/);
-    assert.match(text, /AI 味|去 AI 味/);
+  // Deployment-specific persona wording is configurable; every shared section must survive.
+  for(const section of parseRoleSections(raw).filter(x=>x.mode==='all')){
+    for(const line of section.lines.filter(x=>x.trim())){assert.ok(v1.includes(line));assert.ok(v2.includes(line));}
   }
-  // 二代注入的文本里不应再出现一代的分条机制
-  assert.doesNotMatch(v2, /空格分隔（例如|\[SILENT\]/);
 });

@@ -1,48 +1,19 @@
-// 修复 @snowluma 系列 npm 包的发布打包 bug：dist 内的相对导入缺少 .js 扩展名，
-// 纯 Node ESM 无法解析（bundler 可以）。postinstall 时对每个包 dist 下所有 .js
-// 文件做机械修补：仅当目标文件存在时才补扩展名，否则保持原样。
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(__dirname, '..');
-
-const TARGETS = ['@snowluma/sdk', '@snowluma/mcp'];
-
-function walk(dir, out = []) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) walk(full, out);
-    else out.push(full);
+// Exact, version-locked repair of the published SnowLuma ESM artifacts.
+import fs from 'node:fs';import path from 'node:path';import crypto from 'node:crypto';import {fileURLToPath,pathToFileURL} from 'node:url';
+const rootDefault=fileURLToPath(new URL('..',import.meta.url));
+const sha=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
+export function applySnowlumaPatches({root=rootDefault,verifyOnly=false,manifest=JSON.parse(fs.readFileSync(new URL('./snowluma-patches.json',import.meta.url),'utf8'))}={}){
+ const plans=[];let verified=0;
+ for(const [name,pkg] of Object.entries(manifest.packages)){
+  const base=path.join(root,'node_modules',name),file=path.join(base,'package.json');if(!fs.existsSync(file))throw Error('Required dependency missing: '+name);
+  const installed=JSON.parse(fs.readFileSync(file,'utf8'));if(installed.version!==pkg.version)throw Error('Unsupported dependency version: '+name+'; expected '+pkg.version);
+  for(const [relative,entry] of Object.entries(pkg.files)){
+   const target=path.resolve(base,relative);if(!target.startsWith(path.resolve(base)+path.sep))throw Error('Unsafe patch path');if(!fs.existsSync(target))throw Error('Dependency file missing: '+name+'/'+relative);
+   const raw=fs.readFileSync(target),digest=sha(raw);if(digest===entry.after){verified++;continue;}if(digest!==entry.before)throw Error('Unknown dependency source shape: '+name+'/'+relative);if(verifyOnly)throw Error('Required SnowLuma patch not applied; run npm run compat:patch in a deployment candidate');
+   let next=raw.toString('utf8');for(const [from,to] of Object.entries(entry.edits))next=next.replaceAll("from '"+from+"'","from '"+to+"'");if(sha(Buffer.from(next))!==entry.after)throw Error('Patch output verification failed: '+name+'/'+relative);plans.push({target,next});verified++;
   }
-  return out;
+ }
+ for(const {target,next} of plans){const temp=target+'.bridge-patch-'+process.pid;try{fs.writeFileSync(temp,next,{mode:fs.statSync(target).mode&0o777});fs.renameSync(temp,target);}finally{try{fs.unlinkSync(temp);}catch{}}}
+ return {ok:true,packages:Object.keys(manifest.packages).length,verifiedFiles:verified,patchedFiles:plans.length};
 }
-
-let total = 0;
-for (const pkg of TARGETS) {
-  const distRoot = path.join(ROOT, 'node_modules', pkg, 'dist');
-  if (!fs.existsSync(distRoot)) {
-    console.log(`[patch-snowluma] ${pkg}: dist 不存在，跳过`);
-    continue;
-  }
-  let patched = 0;
-  for (const file of walk(distRoot)) {
-    if (!file.endsWith('.js')) continue;
-    const src = fs.readFileSync(file, 'utf8');
-    const next = src.replace(/from\s+'(\.[^']+)'/g, (m, spec) => {
-      if (spec.endsWith('.js') || spec.endsWith('.json')) return m;
-      const target = path.resolve(path.dirname(file), spec);
-      if (fs.existsSync(target + '.js')) return m.replace(spec, spec + '.js');
-      if (fs.existsSync(target + '.json')) return m.replace(spec, spec + '.json');
-      return m;
-    });
-    if (next !== src) {
-      fs.writeFileSync(file, next);
-      patched += 1;
-    }
-  }
-  console.log(`[patch-snowluma] ${pkg}: 修补了 ${patched} 个文件`);
-  total += patched;
-}
-console.log(`[patch-snowluma] 合计 ${total} 个文件`);
+if(process.argv[1]&&pathToFileURL(path.resolve(process.argv[1])).href===import.meta.url){try{console.log('[snowluma-compat] '+JSON.stringify(applySnowlumaPatches({verifyOnly:process.argv.includes('--verify')})));}catch(error){console.error('[snowluma-compat] '+error.message);process.exitCode=1;}}

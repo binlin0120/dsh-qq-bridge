@@ -3,7 +3,7 @@
 > 一句话说明每个顶层目录干什么、`scripts/` 里的命名约定是什么、哪些脚本像是过期的一次性产物。
 > 本文**只描述现状**，不构成改动指令。文档索引见 [README.md](README.md)。
 >
-> 最后核对：2026-09-29（v0.2.0 / DSH 0.2.0-rc.2 适配）。新增目录/脚本时请顺手补一行。
+> 最后核对：2026-10-30（模块拆分与统一离线测试入口）。新增目录/脚本时请顺手补一行。
 
 ---
 
@@ -21,7 +21,7 @@ DSH/                         ← 工作区根（不是仓库根）
 
 | 目录 | 作用 | 能不能删/动 |
 | --- | --- | --- |
-| `src/` | **桥接内核**：主程序、DSH 客户端、三个 MCP server、黑话/表情/语音共享库 | 不能动。`bridge.js` 是主程序（约 10,400 行，QSH 计划拆分）；`voice-core.js` 与 `snowluma-conn.js` 是**独立工具也在用的单一实现**。**目录里只应有 `.js`**：曾经的 `bridge.js.bak-*` 会污染全局搜索并看起来像 module，2026-09-20 已移出（见下） |
+| `src/` | **桥接内核**：主程序、DSH 客户端、三个 MCP server、黑话/表情/语音共享库 | `bridge.js` 仅启动 `bridge-runtime.mjs`，业务逻辑位于 `src/features/*.mjs`，支持 `.js` 与 `.mjs`。备份文件不得放进源码目录。`voice-core.js` 与 `snowluma-conn.js` 是共享实现；依赖关系见 [ARCHITECTURE.md](ARCHITECTURE.md) |
 | `scripts/` | 调试 / 测试 / 一次性运维脚本（见第二节命名约定） | 测试脚本不能删；`cleanup-*` / `fix-*` / `patch-*` / `diag-*` 多为历史遗留 |
 | `dsh/` | 要装进 DSH 的东西：`agent-presets/qq-chat`、`agent-presets/qq-chat-v2`（preset 的**权威源**，含工具白名单 `qq-tool-restrict.mjs` 的 re-export 壳）。DSH 0.1.7 起 preset 以 bundle patch 形式安装，patch 由 `scripts/build-agent-preset-patches.mjs` 从这里的源生成到 `plugins/qq-agent-presets/presets/` | 改 preset 会影响所有人设行为；改完必须重新生成 patch |
 | `plugins/` | DSH 插件：`qq-mode-console`（暴露 `qq-mode` 设置命名空间；**只有 host 半**，浏览器 UI 卡片未实现）、`qq-agent-presets`（生成两个 preset 行 + 携带唯一的 `qq-tool-restrict` 权威实现） | 改了要重装/重启 DSH |
@@ -38,11 +38,11 @@ DSH/                         ← 工作区根（不是仓库根）
 
 ## 二、`scripts/` 命名约定
 
-脚本共 87 个文件（83 个 `.mjs` + 4 个 JSON 基线，另有 `fixtures/` 目录）。按前缀区分用途：
+测试成员、分层及外部集成前提以 `scripts/test-registry.json` 为准，可运行 `npm run test:list` 查看。按前缀区分用途：
 
 | 前缀 / 形态 | 含义 | 归宿 |
 | --- | --- | --- |
-| `test-*.mjs` | **自动化测试**。其中被 `scripts/test-audit.mjs` 列进 `tests[]` 的那些会跑在 `npm run test:audit` 里（离线、不发真 QQ 消息、不用生产凭据） | 保留，改动需同步 test-audit 清单 |
+| `test-*.mjs` | **自动化测试**。由 `scripts/test-registry.json` 登记到 audit/features/release/integration；`npm test` 默认不执行 integration（离线、不发真 QQ 消息、不用生产凭据） | 保留，改动需同步 test-registry 清单 |
 | `test-dsh-*.mjs` | **需要活的 DSH**（不在 `test:audit` 里）：`test-dsh-auth.mjs`（鉴权链路）、`test-dsh-inbox-projection.mjs`（会话队列投影解析，离线）、`test-dsh-session-retire.mjs`（退役会话的端到端回归）、`test-dsh-v2-wait.mjs`（preset 工具面） | 保留（改 DSH 契约时必须跑） |
 | `test-audit-*.mjs` | test-audit 的子模块（`test-audit-bridge` / `-protocol` / `-security` / `-setup` 及其 `-helpers`/`-guards`），被上一个直接运行 | 保留 |
 | `test-console-ui.mjs` + `console-ui-*.json` / `console-ui-fixture.mjs` / `fixtures/` | 控制台**离线浏览器回归**与基线（`npm run test:console-ui` / `npm run preview:console`），说明见 [guides/CONSOLE-UI-TESTING.md](guides/CONSOLE-UI-TESTING.md) | 保留（基线只在后端契约真变时才重录） |
@@ -122,7 +122,7 @@ docs/
 移动不会影响任何自动化回归。反过来，**下面这些千万别当"过期脚本"清掉**：
 
 - `scripts/patch-snowluma-sdk.mjs`（`postinstall` 依赖，删了 `npm install` 就坏）
-- `scripts/test-audit.mjs` 清单里的每一个（完整清单见该文件 `tests[]` 数组）
+- `scripts/test-registry.json` 登记的测试、`run-tests.mjs` 与兼容入口 `test-audit.mjs`
 - `scripts/console-ui-*.json` / `console-ui-fixture.mjs` / `fixtures/`（控制台回归基线）
 - `scripts/audit-bridge-harness.mjs`、`scripts/dsh-modules.mjs`（被测试/工具引用）
 

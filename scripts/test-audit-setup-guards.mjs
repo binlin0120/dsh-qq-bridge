@@ -1,3 +1,4 @@
+import {readBridgeAuditFile} from './bridge-source.mjs';
 // Execute both real preset plugins against a captured tools service, without DSH/QQ.
 import assert from 'node:assert/strict';
 import path from 'node:path';
@@ -33,7 +34,7 @@ import fs from 'node:fs';
 {
   const helperPath = path.join(root, 'scripts/harden-state-acl.mjs');
   assert.ok(fs.existsSync(helperPath), 'ACL 收紧助手必须存在（start.bat 依赖它）');
-  const helper = fs.readFileSync(helperPath, 'utf8');
+  const helper = readBridgeAuditFile(helperPath, 'utf8');
   for (const needle of ['icacls', '/inheritance:r', '--elevated', 'isHardened', 'process.exit(0)']) {
     assert.ok(helper.includes(needle), `ACL 助手应包含 ${needle}`);
   }
@@ -42,7 +43,7 @@ import fs from 'node:fs';
   // 提权递归防护：被自己拉起的那一次必须跳过提权重试。
   assert.ok(/!isElevatedRun/.test(helper), '提权重试必须被 --elevated 标记短路，防止递归');
 
-  const bat = fs.readFileSync(path.join(root, 'start.bat'));
+  const bat = readBridgeAuditFile(path.join(root, 'start.bat'));
   const batText = bat.toString('latin1');
   const nonAscii = [...bat].filter((b) => b > 127).length;
   assert.equal(nonAscii, 0, 'start.bat 必须保持纯 ASCII（否则非 UTF-8 控制台会乱码）');
@@ -61,7 +62,7 @@ import fs from 'node:fs';
 // 2026-09-20：`start_snowluma` / `stop_snowluma` 与 `snowluma.allowProcessControl` 已整体移除。
 // 这条测试**防止它们（或同类能力）被无意加回来**——本项目唯一一条"删掉的功能不许复活"的约束。
 {
-  const host = fs.readFileSync(path.join(root, 'src/mcp-host-server.js'), 'utf8');
+  const host = readBridgeAuditFile(path.join(root, 'src/mcp-host-server.js'), 'utf8');
   // ① 代码里不得再出现进程启停原语（注释中为记录原因可以提，故先剔掉纯注释行）
   const code = host.split('\n')
     .filter((l) => !l.trim().startsWith('//') && !l.trim().startsWith('*'))
@@ -75,12 +76,12 @@ import fs from 'node:fs';
   }
   // ③ 配置项不得复活（代码与模板两侧都查）
   assert.ok(!code.includes('allowProcessControl'), 'mcp-host-server.js 不得再读取 allowProcessControl');
-  const example = fs.readFileSync(path.join(root, 'config.example.json'), 'utf8');
+  const example = readBridgeAuditFile(path.join(root, 'config.example.json'), 'utf8');
   assert.ok(!example.includes('allowProcessControl'), 'config.example.json 不得再提供 allowProcessControl');
   // ④ 只读工具必须还在（别把整个 server 删空）
   assert.ok(host.includes("'snowluma_status'"), 'snowluma_status（只读探活）必须保留');
   // ⑤ 包元数据必须声明许可证（独立复核发现此前缺失）
-  const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+  const pkg = JSON.parse(readBridgeAuditFile(path.join(root, 'package.json'), 'utf8'));
   assert.equal(pkg.license, 'MIT', 'package.json 必须声明 license 字段');
   console.log('L6 compliance: no SnowLuma process control, no allowProcessControl, license declared');
 }

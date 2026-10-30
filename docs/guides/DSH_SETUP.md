@@ -18,7 +18,7 @@
 2. **安装依赖**：
 
    ```bash
-   npm install
+   npm ci
    ```
 
    > `postinstall` 会自动修补 `@snowluma/sdk` 的 ESM 打包 bug。

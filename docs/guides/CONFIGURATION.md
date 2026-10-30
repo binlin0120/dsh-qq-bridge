@@ -25,7 +25,7 @@
 | `allow.private` | 允许私聊的 QQ 号列表，例如 `[123456789]` |
 | `allow.groups` | 允许的群号列表，例如 `[987654321]` |
 
-> **安全红线：`allowAllWhenEmpty` 必须保持 `false`。** 改成 `true` 时，白名单为空会放行所有私聊和群聊，等于把 agent 的操作权敞口给所有人，启动时也会打警告。不要开。
+> **安全红线：`allowAllWhenEmpty` 必须保持 `false`。** 该兼容开关已停用，`true` 会在启动或热更新时被拒绝；空名单不放行普通会话。
 
 ## 1. 接入层：DSH 与 SnowLuma
 
@@ -59,7 +59,7 @@ SnowLuma 是专有组件，其许可不允许被打包分发，本项目只连�
 
 | 项 | 默认值 | 说明 |
 | --- | --- | --- |
-| `ownerQQ` | `null` | 机主 QQ 号。`closed-agent` 模式只认机主私聊，其他人进不来；没填时机主功能不可用 |
+| `ownerQQ` | `null` | 机主 QQ 号。`closed-agent` 完整宿主工具仅给机主私聊，授权访客与群聊使用受限预设；没填时机主功能不可用 |
 | `sessionCwd` | 空 | 会话默认工作目录，留空用 DSH 的默认工作区 |
 | `agentPreset` | `qq-chat` | 普通会话（chat / reserved / reserved2 以外）默认用的 DSH agent preset |
 | `workspaceTitle` | `QQ 聊天` | QQ 会话在 DSH 里归组的工作区标题 |
@@ -75,7 +75,7 @@ SnowLuma 是专有组件，其许可不允许被打包分发，本项目只连�
 模式在控制台里切换，不在 `config.json` 里写死（启动模式由 DSH 设置 / `state/mode.json` 驱动）：
 
 - `chat`：白名单群 + 白名单私聊，走 `qq-chat` 安全聊天。
-- `closed-agent`：仅机主私聊，完整工具，可以在 QQ 上直接给 DSH 派活；机主以外的会话在该模式下只走只聊天 preset 与限流。派活、审批、急停（说“别发了 / 停下 / 全部停”这类口语）都在这个模式下用。
+- `closed-agent`：机主私聊可用完整工具，在 QQ 上直接给 DSH 派活；机主以外的会话在该模式下只走只聊天 preset 与限流。派活、审批、急停（说“别发了 / 停下 / 全部停”这类口语）都在这个模式下用。
 - `reserved`（一代仿真）：仿真群友，观望 / 活跃 / 试探 / 退场状态机，选择性参与。
 - `reserved2`（二代仿真）：AI 通过 `qq_get_unread_messages` / `qq_send_message` 等工具自主看消息、发言、等待、设置唤醒 / 潜水；DSH 端用 `qq-chat-v2` preset。
 
@@ -115,7 +115,7 @@ SnowLuma 是专有组件，其许可不允许被打包分发，本项目只连�
 画图不是 `config.json` 里一个开关就能讲完的，它由三部分组成：
 
 - **提交地址与模型**：`draw.baseUrl`（默认 `https://laneai.dev/v1`，不在 `config.example.json` 里，留空就用这个默认）、`draw.model`（默认 `gpt-image-2`）。部署时如果用自己的画图服务，把 `draw.baseUrl` 改成你自己的地址；模型名按服务方给的填。
-- **尺寸与限额**：`draw.imageSize`（默认 `1K`）、`draw.dailyLimit`（默认 `20`）。限额只有在 `usageLimits` 开启时才生效（见第 9 节），没开时不设每日次数。
+- **尺寸与限额**：`draw.imageSize`（默认 `1K`）、`draw.dailyLimit`（默认 `20`）。通用画图限额只有在 `usageLimits` 开启时才生效（见第 9 节）；访客私聊与群友照片日额度仍独立执行。
 - **选路与投递**：提交前会先用探针测上传速度、按速度排线并缓存 10 分钟，线路全失败时不发付费请求；提交结果不明时不换 IP 重发，避免重复扣费；下载走分段续传、按速度测 IP，下载链接 404 / 410 时直接判为链接失效，不再反复续传。选路状态落在本地 `state/image-upload-routes.json` 和 `state/image-download-routes.json`，不用手动改。
 - **照片状态查询**：QQ 里问“那张照片怎么还没发 / 发了没”这类话时，桥接会按任务实际状态回话（已发 / 还没拿到 / 还没完整传过来 / 发顺失败等），不用另外配。
 
@@ -218,15 +218,16 @@ SnowLuma 是专有组件，其许可不允许被打包分发，本项目只连�
 
 黑话词库在控制台「黑话词库」页可查看 / 编辑，数据出机清单见 [LICENSE](../../LICENSE) 的「数据出机清单」。
 
-## 9. 限额与分享：`usageLimits`、`draw`、`qzone`、`status`、`guestPhotos`、`quietHours`、`work`
+## 9. 限额与分享：`usageLimits`、`draw`、`qzone`、`status`、`guestPhotos`、`groupPhotos`、`quietHours`、`work`
 
 这组键不在 `config.example.json` 里，写在 `config.json` 里同样生效，默认都是“不限”或下面这个默认值：
 
 | 项 | 默认值 | 说明 |
 | --- | --- | --- |
-| `usageLimits` | `false` | 总开关：没开时不设每日次数、费用、token 额度；开了之后下面各项限额才生效 |
+| `usageLimits` | `false` | 通用用量开关；角色照片的访客私聊日额度和群友日额度独立强制执行，`false` 不会取消这两项限制 |
 | `draw.dailyLimit` | `20` | 开启限额后，每天最多画几张图；访客照片会再受 `guestPhotos.ownerReserve` 影响（机主预留额度） |
-| `guestPhotos.enabled` / `guestPhotos.perDay` / `guestPhotos.ownerReserve` | `true` / `3` / `5` | 访客每天最多拍几张、机主预留几张；访客额度用完会回“今天先不拍了” |
+| `guestPhotos.enabled` / `guestPhotos.perDay` / `guestPhotos.ownerReserve` | `true` / `3` / `5` | 访客私聊照片独立日额度；关闭通用用量限制也有效。机主预留只在通用画图限额开启时生效；用完会回“今天先不拍了” |
+| `groupPhotos.enabled` / `groupPhotos.perDay` | `true` / `1` | `closed-agent` 下群友按真实发言者 QQ 号每天最多 1 张，跨群共用，北京时间零点刷新，重启保留用量；主人不占该次数 |
 | `qzone.dailyLimit` / `qzone.rollingHours` / `qzone.rollingMax` / `qzone.minIntervalHours` | `2` / `72` / `4` / `12` | 说说：每天最多 2 次，滚动 72 小时最多 4 次、最少间隔 12 小时；这条独立于通用 `usageLimits`，不另设轮询或模型任务 |
 | `status.dailyLimit` | `3` | 签名状态每天最多分享几次 |
 | `quietHours.from` / `quietHours.to` | `23` / `8` | 夜间安静时段（23 点到次日 8 点），该时段内主动分享会受限 |

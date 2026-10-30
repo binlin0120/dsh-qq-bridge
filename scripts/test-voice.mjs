@@ -1,3 +1,4 @@
+import {readBridgeAuditFile} from './bridge-source.mjs';
 // 语音发送自检：
 // 1) send-voice-lib 纯函数（来源解析、音频库列举、时长/体积校验、目标 key 解析）
 // 2) 配置项 + MCP 工具 + bridge 路由存在性
@@ -119,13 +120,13 @@ console.log('## 配置项（AI 发语音默认关闭，等语音库准备好再�
   //   ② 更要紧的是语义错了：AI 发语音是**受支持的功能**，用户按文档打开它之后，
   //      这条断言会去断言**用户的当前状态**并失败 —— 测试不该因为用户用了功能而变红。
   // 用户当前值只做提示，不参与判定。
-  const exCfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'config.example.json'), 'utf8'));
+  const exCfg = JSON.parse(readBridgeAuditFile(path.join(ROOT, 'config.example.json'), 'utf8'));
   ok(exCfg.socialV2?.tools?.sendVoice === false, 'config.example.json tools.sendVoice=false（出厂默认不给 AI 发语音）');
   ok(exCfg.socialV2?.voice?.enabled === false, 'config.example.json voice.enabled=false（出厂默认总闸关闭）');
   ok(exCfg.socialV2?.voice?.allowAbsolutePath === false, '出厂默认禁止绝对路径（安全默认）');
   ok(Number(exCfg.socialV2?.voice?.maxPerHour) > 0, '出厂默认带每小时限流');
   try {
-    const localCfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'config.json'), 'utf8'));
+    const localCfg = JSON.parse(readBridgeAuditFile(path.join(ROOT, 'config.json'), 'utf8'));
     console.log(`  ℹ  你本机的值（仅供参考，不参与判定）：tools.sendVoice=${localCfg.socialV2?.tools?.sendVoice} / voice.enabled=${localCfg.socialV2?.voice?.enabled}`);
   } catch {
     console.log('  ℹ  本机没有 config.json（不入库）——本段只查随仓库发布的出厂默认');
@@ -134,14 +135,14 @@ console.log('## 配置项（AI 发语音默认关闭，等语音库准备好再�
   const ex = exCfg;
   ok(ex.socialV2?.voice?.dir === 'audio', 'config.example.json 含 voice 段');
   // 代码里的默认值也必须一致，否则删掉 config.json 里那两行就会变回"默认开"
-  const bridgeSrc = fs.readFileSync(path.join(ROOT, 'src', 'bridge.js'), 'utf8');
+  const bridgeSrc = readBridgeAuditFile(path.join(ROOT, 'src', 'bridge.js'), 'utf8');
   ok(/sendVoice: false,/.test(bridgeSrc), 'bridge.js 里 tools 默认 sendVoice: false');
   ok(/cfg\.socialV2\.voice = \{\s*\n\s*enabled: false,/.test(bridgeSrc), 'bridge.js 里 voice 默认 enabled: false');
 }
 
 console.log('## MCP 工具与 bridge 路由');
 {
-  const mcp = fs.readFileSync(path.join(ROOT, 'src', 'mcp-snowluma-safe.js'), 'utf8');
+  const mcp = readBridgeAuditFile(path.join(ROOT, 'src', 'mcp-snowluma-safe.js'), 'utf8');
   ok(mcp.includes("'qq_send_voice'"), 'MCP 注册 qq_send_voice');
   ok(mcp.includes("'qq_list_voices'"), 'MCP 注册 qq_list_voices');
   ok(mcp.includes("qq_send_voice: 'sendVoice'"), 'qq_send_voice 受 sendVoice 开关控制');
@@ -150,7 +151,7 @@ console.log('## MCP 工具与 bridge 路由');
   ok(voiceBlock.includes('/api/socialV2/send-voice'), 'qq_send_voice 调 /api/socialV2/send-voice');
   ok(!voiceBlock.includes("绝对路径的音频"), 'qq_send_voice 不暴露绝对路径参数');
 
-  const bridge = fs.readFileSync(path.join(ROOT, 'src', 'bridge.js'), 'utf8');
+  const bridge = readBridgeAuditFile(path.join(ROOT, 'src', 'bridge.js'), 'utf8');
   for (const s of [
     '/api/voice/send', '/api/socialV2/send-voice', '/api/socialV2/voices',
     'sendVoiceV2', 'sendVoiceForV2', 'resolveVoicePathForV2', 'resolveVoicePathForOperator',
@@ -164,7 +165,7 @@ console.log('## MCP 工具与 bridge 路由');
 
 console.log('## 安全边界（AI 通道来源限制）');
 {
-  const bridge = fs.readFileSync(path.join(ROOT, 'src', 'bridge.js'), 'utf8');
+  const bridge = readBridgeAuditFile(path.join(ROOT, 'src', 'bridge.js'), 'utf8');
   const fn = bridge.slice(bridge.indexOf('function resolveVoicePathForV2'), bridge.indexOf('function resolveVoicePathForOperator'));
   ok(/base64:|data:|https\?:/.test(fn), 'AI 通道拒绝 base64/data/http 来源');
   ok(/allowAbsolutePath/.test(fn), 'AI 通道检查 allowAbsolutePath');
@@ -181,7 +182,7 @@ if (!hasVoiceTool()) {
 } else {
   const standalone = voiceToolPath('voice-cli.mjs');
   ok(fs.existsSync(standalone), 'voice-tool/voice-cli.mjs 存在（独立直连 SnowLuma）');
-  const src = fs.readFileSync(standalone, 'utf8');
+  const src = readBridgeAuditFile(standalone, 'utf8');
   ok(!/send-voice-lib/.test(src), '独立工具不 import 桥接模块（真正零依赖）');
   ok(/send_private_msg|send_group_msg/.test(src), '独立工具直接调 OneBot 发送动作');
   ok(/type: 'record'/.test(src), '独立工具构造 record 段');
@@ -197,21 +198,21 @@ if (!hasVoiceTool()) {
 
 console.log('## preset 人设已描述语音能力（否则 AI 不知道自己会说话）');
 {
-  const preset = fs.readFileSync(path.join(ROOT, 'dsh', 'agent-presets', 'qq-chat-v2', 'agent.cordis.yml'), 'utf8');
+  const preset = readBridgeAuditFile(path.join(ROOT, 'dsh', 'agent-presets', 'qq-chat-v2', 'agent.cordis.yml'), 'utf8');
   ok(preset.includes('qq_send_voice'), 'qq-chat-v2 人设提到 qq_send_voice');
   ok(preset.includes('qq_list_voices'), 'qq-chat-v2 人设提到 qq_list_voices');
   ok(preset.includes('verified=true'), '人设说明 verified=true 的语义');
   ok(/不要假装发了语音/.test(preset), '人设禁止假装发语音');
   // DSH 0.1.7 起守卫的权威实现只有一份，在 qq-agent-presets bundle 里
   // （dsh/agent-presets/<preset>/qq-tool-restrict.mjs 只是 re-export 壳）。
-  const restrict = fs.readFileSync(path.join(ROOT, 'plugins', 'qq-agent-presets', 'qq-tool-restrict.mjs'), 'utf8');
+  const restrict = readBridgeAuditFile(path.join(ROOT, 'plugins', 'qq-agent-presets', 'qq-tool-restrict.mjs'), 'utf8');
   ok(restrict.includes("'mcp__snowluma__'"), 'preset 白名单以前缀放行 mcp__snowluma__*（覆盖语音工具）');
 }
 
 console.log('## 控制台契约');
 {
-  const html = fs.readFileSync(path.join(ROOT, 'public', 'console.html'), 'utf8');
-  const bridgeSrc = fs.readFileSync(path.join(ROOT, 'src', 'bridge.js'), 'utf8');
+  const html = readBridgeAuditFile(path.join(ROOT, 'public', 'console.html'), 'utf8');
+  const bridgeSrc = readBridgeAuditFile(path.join(ROOT, 'src', 'bridge.js'), 'utf8');
   ok(html.includes('data-v2-tool="sendVoice"'), '控制台有 sendVoice 工具开关');
   ok(bridgeSrc.includes("'sendVoice']"), 'config API 的 toolFlags 含 sendVoice');
   const uniq = (a) => [...new Set(a)].sort();
@@ -272,7 +273,7 @@ console.log('## 回归：长消息里的 URL 不许被切碎（P1，曾静默丢
   // 由来：splitLongSegment 用 \u0000URL<n>\u0000 占位符保护 URL，但对超长片段直接按
   // max 硬切，会拦腰切断占位符 → 还原正则失配 → URL 整条消失 + 裸 NUL + 字面量 "URL0"
   // 被发进 QQ 消息。这里把函数从 bridge.js 抽出来，对 1..max+20 所有长度做校验。
-  const src = fs.readFileSync(path.join(ROOT, 'src', 'bridge.js'), 'utf8');
+  const src = readBridgeAuditFile(path.join(ROOT, 'src', 'bridge.js'), 'utf8');
   const at = src.indexOf('function splitLongSegment');
   ok(at > 0, '在 bridge.js 里找到 splitLongSegment');
   if (at > 0) {
@@ -302,7 +303,7 @@ console.log('## 回归：AI 通道的语音库响应不许带出绝对路径（P
   // 由来：/api/socialV2/voices 的 dir 字段做了 agentCall ? undefined 抑制，
   // 但紧邻的 hint 模板字符串仍然无条件插值 ${voice.dir} —— 绝对路径又从旁边漏给模型了。
   // 这类"字段堵了、文案没堵"的漏法静态查最有效：AI 通道的所有响应字段与文案都不该含盘符/家目录。
-  const src = fs.readFileSync(path.join(ROOT, 'src', 'bridge.js'), 'utf8');
+  const src = readBridgeAuditFile(path.join(ROOT, 'src', 'bridge.js'), 'utf8');
   const at = src.indexOf("url.pathname === '/api/socialV2/voices'");
   ok(at > 0, '找到 voices 路由');
   const section = src.slice(at, at + 3200);
@@ -329,11 +330,11 @@ if (process.env.QQ_BRIDGE_TEST_LIVE === '1') {
     console.log('     注意：这是**跳过，不是通过** —— 这台机器上没有覆盖到 live 链路。');
   } else {
   try {
-    const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'config.json'), 'utf8'));
+    const cfg = JSON.parse(readBridgeAuditFile(path.join(ROOT, 'config.json'), 'utf8'));
     const port = Number(cfg.consolePort) || 3100;
     let token = String(cfg.consoleToken ?? '').trim();
     if (!token) {
-      try { token = fs.readFileSync(path.join(ROOT, 'state', 'console-token'), 'utf8').trim(); } catch {}
+      try { token = readBridgeAuditFile(path.join(ROOT, 'state', 'console-token'), 'utf8').trim(); } catch {}
     }
     const target = (cfg.allow?.groups ?? [])[0];
     const dir = path.resolve(ROOT, String(cfg.socialV2?.voice?.dir ?? 'audio'));

@@ -1,3 +1,4 @@
+import {readBridgeAuditFile} from './bridge-source.mjs';
 // 图形界面（voice-gui.mjs + public/voice.html）自检：
 //   1) 参数解析（--port 必须真的生效，裸 --port 不能退化成 1）
 //   2) 静态资源与结构（HTML 里引用的接口、关键控件、内联 JS 可解析）
@@ -53,7 +54,7 @@ console.log('## 参数解析（曾经把 --port 解析成 1 的坑）');
   if (!hasVoiceTool()) {
     skipVoiceTool('voice-gui.mjs 源码里的非法端口守卫 Number.isInteger(PORT)');
   } else {
-    const src = fs.readFileSync(voiceToolPath('voice-gui.mjs'), 'utf8');
+    const src = readBridgeAuditFile(voiceToolPath('voice-gui.mjs'), 'utf8');
     ok(src.includes('Number.isInteger(PORT)'), '非法端口会被拦下（不会静默绑到奇怪端口）');
   }
 }
@@ -92,7 +93,7 @@ if (!hasVoiceTool()) {
 } else {
   const htmlPath = voiceToolPath('public', 'voice.html');
   ok(fs.existsSync(htmlPath), 'voice-tool/public/voice.html 存在');
-  const html = fs.readFileSync(htmlPath, 'utf8');
+  const html = readBridgeAuditFile(htmlPath, 'utf8');
   for (const id of ['libList', 'tgtList', 'sendBtn', 'drop', 'dryRun', 'history', 'gwDot', 'toast']) {
     ok(html.includes(`id="${id}"`), `界面元素 ${id}`);
   }
@@ -111,7 +112,7 @@ console.log('## 服务端接线');
 if (!hasVoiceTool()) {
   skipVoiceTool('voice-gui.mjs 的服务端接线断言（host/令牌比较/上传净化/删除接口校验）');
 } else {
-  const src = fs.readFileSync(voiceToolPath('voice-gui.mjs'), 'utf8');
+  const src = readBridgeAuditFile(voiceToolPath('voice-gui.mjs'), 'utf8');
   ok(/server\.listen\(PORT, HOST/.test(src), '只监听指定 host');
   ok(/const HOST = '127\.0\.0\.1'/.test(src), 'HOST 固定为 127.0.0.1（不暴露到局域网）');
   ok(/timingSafeEqual/.test(src), '令牌比较用 timingSafeEqual');
@@ -130,7 +131,7 @@ console.log('## 独立命令行的删除能力');
 if (!hasVoiceTool()) {
   skipVoiceTool('voice-cli.mjs 的删除能力断言（cmdRemove 的穿越校验/--yes/非 TTY 不卡死）');
 } else {
-  const cli = fs.readFileSync(voiceToolPath('voice-cli.mjs'), 'utf8');
+  const cli = readBridgeAuditFile(voiceToolPath('voice-cli.mjs'), 'utf8');
   ok(/async function cmdRemove/.test(cli), '有 cmdRemove');
   ok(/remove.*rm.*delete|cmd === 'remove'/.test(cli), '注册了 remove 命令');
   const fn = cli.slice(cli.indexOf('async function cmdRemove'), cli.indexOf('async function cmdCheck'));
@@ -158,7 +159,7 @@ console.log('## 共享库符号完整性（防"用了但没 import"）');
   for (const { file: entryFile } of entrypoints) {
     const rel = path.relative(ROOT, entryFile).replace(/\\/g, '/');
     if (!fs.existsSync(entryFile)) continue;
-    const src = fs.readFileSync(entryFile, 'utf8');
+    const src = readBridgeAuditFile(entryFile, 'utf8');
     // 独立工具经 ../qq-bridge/src/ 引用共享库，桥接侧经 ./ 或 ../src/，两种都要认
     const importedBlock = [...src.matchAll(/import\s*\{([^}]*)\}\s*from\s*'[^']*(?:send-voice-lib|voice-core)\.js'/g)]
       .map((m) => m[1]).join(',');

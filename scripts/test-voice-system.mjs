@@ -1,3 +1,4 @@
+import {readBridgeAuditFile} from './bridge-source.mjs';
 // 语音系统整体自检（结构层）：把「独立工具 + qq-bridge 语音系统」的所有入口、依赖、
 // 端点、开关、文档一次列全并逐项验证存在性与一致性。
 // 这是"完整检查"的机器可读版本，避免只靠人工翻文件漏项。
@@ -15,11 +16,11 @@ const ok = (cond, name, extra = '') => {
   if (cond) { pass += 1; console.log(`  ✅ ${name}${extra ? ' — ' + extra : ''}`); }
   else { fail += 1; console.error(`  ❌ ${name}${extra ? ' — ' + extra : ''}`); }
 };
-const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+const read = (rel) => readBridgeAuditFile(path.join(ROOT, rel), 'utf8');
 const exists = (rel) => fs.existsSync(path.join(ROOT, rel));
 // 工具不在本仓库里时这两个返回 null —— 调用方必须先 hasVoiceTool() 守一道，
 // 免得"文件不存在"被误当成断言失败（那是跳过，不是失败）。
-const readTool = (rel) => (hasVoiceTool() ? fs.readFileSync(voiceToolPath(rel), 'utf8') : null);
+const readTool = (rel) => (hasVoiceTool() ? readBridgeAuditFile(voiceToolPath(rel), 'utf8') : null);
 const existsTool = (rel) => (hasVoiceTool() ? fs.existsSync(voiceToolPath(rel)) : null);
 
 console.log('## 文件清单（独立工具 = 上一级 voice-tool/，共享内核 = 本仓库 src/）');
@@ -102,7 +103,7 @@ console.log('## 各入口 import 的符号都真实存在');
     const file = path.join(base, rel);
     // 工具不在本仓库里时这两个入口文件本来就不存在 —— 跳过（不是失败）。
     if (!fs.existsSync(file)) { skipVoiceTool(`入口 ${rel}（在仓库上一级的 voice-tool/ 里）`); continue; }
-    const src = fs.readFileSync(file, 'utf8');
+    const src = readBridgeAuditFile(file, 'utf8');
     const blocks = [...src.matchAll(/import\s*\{([^}]*)\}\s*from\s*'([^']*(?:voice-core|send-voice-lib)[^']*)'/g)];
     if (!blocks.length) { ok(true, `${rel} 不直接依赖语音共享库`); continue; }
     // 独立工具必须指向 qq-bridge 的共享内核，而不是自己复制一份

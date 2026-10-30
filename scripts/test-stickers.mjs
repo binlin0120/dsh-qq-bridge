@@ -1,3 +1,4 @@
+import {readBridgeAuditFile} from './bridge-source.mjs';
 // 表情包体系自检：
 // 1) sticker-lib 纯函数（合并/查找/格式化/笔记/使用统计）
 // 2) 配置项与 MCP 工具描述存在性
@@ -86,7 +87,7 @@ console.log('## sticker-lib 纯函数');
 
 console.log('## 配置文件');
 {
-  const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'config.json'), 'utf8'));
+  const cfg = JSON.parse(readBridgeAuditFile(path.join(ROOT, 'config.json'), 'utf8'));
   const tools = cfg.socialV2?.tools ?? {};
   ok(tools.listStickers === true, 'config listStickers=true');
   ok(tools.getStickerImage === true, 'config getStickerImage=true');
@@ -99,7 +100,7 @@ console.log('## 配置文件');
 
 console.log('## 表情单气泡约束');
 {
-  const mcp = fs.readFileSync(path.join(ROOT, 'src', 'mcp-snowluma-safe.js'), 'utf8');
+  const mcp = readBridgeAuditFile(path.join(ROOT, 'src', 'mcp-snowluma-safe.js'), 'utf8');
   const sendStickerBlock = mcp.slice(mcp.indexOf("'qq_send_sticker'"), mcp.indexOf("'qq_sticker_note'"));
   ok(!sendStickerBlock.includes('message: z.string()'), 'qq_send_sticker MCP 不再接受 message 参数');
   ok(sendStickerBlock.includes('不能在同一气泡里附带文字'), 'qq_send_sticker 描述强调单气泡');
@@ -110,7 +111,7 @@ console.log('## 表情单气泡约束');
 
 console.log('## MCP 工具描述存在性');
 {
-  const mcp = fs.readFileSync(path.join(ROOT, 'src', 'mcp-snowluma-safe.js'), 'utf8');
+  const mcp = readBridgeAuditFile(path.join(ROOT, 'src', 'mcp-snowluma-safe.js'), 'utf8');
   for (const name of ['qq_list_stickers', 'qq_get_sticker_image', 'qq_send_sticker', 'qq_sticker_note', 'qq_set_sticker_remark']) {
     ok(mcp.includes(`'${name}'`) || mcp.includes(`"${name}"`), `MCP 工具 ${name} 已注册`);
   }
@@ -118,7 +119,7 @@ console.log('## MCP 工具描述存在性');
 
 console.log('## bridge 路由/函数存在性');
 {
-  const bridge = fs.readFileSync(path.join(ROOT, 'src', 'bridge.js'), 'utf8');
+  const bridge = readBridgeAuditFile(path.join(ROOT, 'src', 'bridge.js'), 'utf8');
   for (const s of ['/api/socialV2/sticker-list', '/api/socialV2/sticker-image', '/api/socialV2/sticker-note', '/api/socialV2/send-sticker', '/api/socialV2/sticker-remark', '/api/stickers', 'syncStickerLibrary', 'sendStickerV2']) {
     ok(bridge.includes(s), `bridge 包含 ${s}`);
   }
@@ -127,7 +128,7 @@ console.log('## bridge 路由/函数存在性');
 if (process.env.QQ_BRIDGE_TEST_LIVE === '1') {
   console.log('## live：SnowLuma 收藏表情链路');
   try {
-    const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'config.json'), 'utf8'));
+    const cfg = JSON.parse(readBridgeAuditFile(path.join(ROOT, 'config.json'), 'utf8'));
     const base = String(cfg.snowluma?.httpUrl || 'http://127.0.0.1:3000').replace(/\/+$/, '');
     const headers = { 'content-type': 'application/json', ...(cfg.snowluma?.accessToken ? { authorization: `Bearer ${cfg.snowluma.accessToken}` } : {}) };
     const res = await fetch(`${base}/fetch_custom_face_detail`, {

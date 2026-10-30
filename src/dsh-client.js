@@ -13,6 +13,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { createHash, createHmac, randomUUID } from 'node:crypto';
 import YAML from 'js-yaml';
+import {parseRpcResponse,assertResult} from './dsh-protocol.mjs';
 import { AbstractApiClient } from '@deepseek-ai/dsh-host-apiproxy/client';
 
 /** DSH home：凭据文件与（历史）启动日志都在这里。 */
@@ -302,7 +303,7 @@ export class NodeApiClient extends AbstractApiClient {
     this.cookie = null;
     this.cookiePromise = null;
     this._authEpoch = 0;
-    this._muxSendOpen = null;
+    this._muxSenders = new Set();
     // 持久化签名密钥的探测缓存：undefined=未探测，null=不可用，Buffer=可用。
     // 探一次就够（文件在 DSH 生命周期内不变），避免每个请求都读一次磁盘。
     this._secret = undefined;
@@ -607,9 +608,7 @@ export class NodeApiClient extends AbstractApiClient {
     this.onEnvelope(message);
     const response = await this.postJson(`/api/${endpoint}`, message, signal, timeoutPolicy);
     const full = await response.json();
-    if (!full || full.type !== 'server-response' || full.rpcId !== message.rpcId || !full.result) {
-      throw new Error(`invalid server-response for ${endpoint}`);
-    }
+    parseRpcResponse(full, message);
     this.onEnvelope(full);
     return { rpcId: full.rpcId, result: full.result };
   }
@@ -678,7 +677,7 @@ export class NodeApiClient extends AbstractApiClient {
     const sid = String(sessionId);
     // 先记账再发送：即使此刻没有连接（或正处在重连窗口内），重连时也会重放。
     this._desiredFollows.add(sid);
-    if (this._muxSendOpen) this._muxSendOpen(sid);
+    for (const sendOpen of this._muxSenders) sendOpen(sid);
   }
 
   async *_remoteMuxGenerator(signal, onOpen) {
@@ -707,7 +706,7 @@ export class NodeApiClient extends AbstractApiClient {
     const endStream = () => {
       if (ended) return;
       ended = true;
-      if (this._muxSendOpen === sendOpen) this._muxSendOpen = null;
+      this._muxSenders.delete(sendOpen);
       // 连接断开（含鉴权失败/DSH 重启）时丢弃旧 Cookie，重连会重新 token exchange。
       if (!sig.aborted) this.invalidateAuth();
       enqueue({ kind: 'end' });
@@ -763,7 +762,7 @@ export class NodeApiClient extends AbstractApiClient {
     const handleOpen = () => {
       if (ended || sig.aborted) return;
       socketOpen = true;
-      this._muxSendOpen = sendOpen;
+      this._muxSenders.add(sendOpen);
       // 重放**全部**期望 follow（跨重连保留），而不只是本次连接排队的那些。
       // 少了这一步，DSH 一重启，所有已存在的 QQ 会话就会静默失联。
       for (const sid of this._desiredFollows) sendOpen(sid);
@@ -909,7 +908,7 @@ export class NodeApiClient extends AbstractApiClient {
         await new Promise((resolve) => { wake = resolve; });
       }
     } finally {
-      if (this._muxSendOpen === sendOpen) this._muxSendOpen = null;
+      this._muxSenders.delete(sendOpen);
       sig.removeEventListener('abort', handleAbort);
       socket.removeEventListener('open', handleOpen);
       socket.removeEventListener('message', handleMessage);
@@ -923,6 +922,7 @@ export class NodeApiClient extends AbstractApiClient {
 
 /** 把 RpcResponse 的结果槽解出来；业务错误直接抛出。 */
 export function unwrap(response, label) {
+  assertResult(response?.result,label);
   if (response.result.ok) return response.result.value;
   const { code, message } = response.result.error;
   throw new Error(`${label} failed: ${code}: ${message}`);

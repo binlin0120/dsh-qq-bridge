@@ -1,0 +1,4 @@
+// Expiry releases local waiting only; remote effects remain uncertain until proven.
+export function withinDeadline(operation,{ms=120000,label='operation',signal,onTimeout=()=>{}}={}){
+ return new Promise((resolve,reject)=>{let settled=false,timer;const finish=(fn,value)=>{if(settled)return;settled=true;clearTimeout(timer);signal?.removeEventListener('abort',abort);fn(value);};const abort=()=>finish(reject,Object.assign(Error(label+' cancelled'),{code:'OPERATION_CANCELLED'}));if(signal?.aborted)return abort();signal?.addEventListener('abort',abort,{once:true});timer=setTimeout(()=>{const error=Object.assign(Error(label+' timeout; outcome uncertain'),{code:'OPERATION_TIMEOUT'});try{onTimeout(error);}catch{}finish(reject,error);},ms);Promise.resolve().then(()=>typeof operation==='function'?operation():operation).then(x=>finish(resolve,x),e=>finish(reject,e));});
+}

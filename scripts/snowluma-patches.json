@@ -1,0 +1,237 @@
+{
+  "schema": 1,
+  "packages": {
+    "@snowluma/sdk": {
+      "version": "1.14.20",
+      "files": {
+        "dist/internal/abort.js": {
+          "before": "1d81540a21a5a086aa20ac811f55a1dd809999e27f76d5c0594d8e3a1eda2399",
+          "after": "c954506a9bfc06dbe6f925a69300b3c035f6fc241e8a0d1bfa63664faf77a049",
+          "edits": {
+            "../errors": "../errors.js"
+          }
+        },
+        "dist/types/actions.js": {
+          "before": "67ba6f0050980c82a2e902020adc6a8080bdb7d7bb6878f9632756aa46fe290d",
+          "after": "67ba6f0050980c82a2e902020adc6a8080bdb7d7bb6878f9632756aa46fe290d",
+          "edits": {}
+        },
+        "dist/client/api-client.js": {
+          "before": "9b0155a26bd7fee780a03d1ab340144914617ce37fc86bb1e6acf606f4dbdf4d",
+          "after": "4d421ae78c005176841a6939eb4102004653329f3ee217b03cce52a8f1d97fc6",
+          "edits": {
+            "../errors": "../errors.js",
+            "../messages/index": "../messages/index.js"
+          }
+        },
+        "dist/messages/chain.js": {
+          "before": "1cfb78fd5db4b9073497ddc9e7afbeb6f5e327ba8b543f6e876633b81ff6a651",
+          "after": "c51f44c8c0ddf7a21c34ed39b7d9f73be43755d3954736e3055d63a7cf13a32e",
+          "edits": {
+            "./cq-format": "./cq-format.js",
+            "./segments": "./segments.js"
+          }
+        },
+        "dist/events/command.js": {
+          "before": "a348cb2001fff0abfb5e95acfd507945f28ef2510934a910a73a121afbe98d3a",
+          "after": "a348cb2001fff0abfb5e95acfd507945f28ef2510934a910a73a121afbe98d3a",
+          "edits": {}
+        },
+        "dist/events/context.js": {
+          "before": "410ee660a6da7c175683cd6ed7521fca38805e81e4f1579b7a5b8bf994729cb4",
+          "after": "6d4ff93b42b0a4b8429afce4b088c7752771cf3a59fb63395b94af02d523d4dc",
+          "edits": {
+            "./guards": "./guards.js"
+          }
+        },
+        "dist/messages/cq-format.js": {
+          "before": "b9981d190e2263d4b4188cde45eaad6eac514b702e34e0462d76489d68f72c47",
+          "after": "b9981d190e2263d4b4188cde45eaad6eac514b702e34e0462d76489d68f72c47",
+          "edits": {}
+        },
+        "dist/messages/cq.js": {
+          "before": "dd47c254cb684e546d19e5c460d5cdac6a985f17d62712551ae2845c021580a5",
+          "after": "34975023eadc51cdee03b4c4dcce8dca377935ac57ef5b646f694458e9ae2063",
+          "edits": {
+            "./chain": "./chain.js",
+            "./cq-format": "./cq-format.js",
+            "./segments": "./segments.js"
+          }
+        },
+        "dist/emitter.js": {
+          "before": "18ffaf70a93759cd0194b4e985120feaed91b0b0075a871785f0522ecb0581d4",
+          "after": "18ffaf70a93759cd0194b4e985120feaed91b0b0075a871785f0522ecb0581d4",
+          "edits": {}
+        },
+        "dist/errors.js": {
+          "before": "f0fcab6313000b6add0f6f0a3709f26f558c12419da925519c3433ae00992d61",
+          "after": "f0fcab6313000b6add0f6f0a3709f26f558c12419da925519c3433ae00992d61",
+          "edits": {}
+        },
+        "dist/types/events.js": {
+          "before": "ab7ab1bc958390572a353df1670ba85f021bde06c45d4268ecd1b37f69026959",
+          "after": "ab7ab1bc958390572a353df1670ba85f021bde06c45d4268ecd1b37f69026959",
+          "edits": {}
+        },
+        "dist/events/guards.js": {
+          "before": "28d46d9c20062f95fd9ea3ee3913ec50b2cc5f8013de51fcd744ebab19a7d449",
+          "after": "28d46d9c20062f95fd9ea3ee3913ec50b2cc5f8013de51fcd744ebab19a7d449",
+          "edits": {}
+        },
+        "dist/client/http-client.js": {
+          "before": "80fffc06c989f1be4a9002752dab9032b242e728b43e8ae6b3a1d84193243753",
+          "after": "abeb7caa7f4d6326004f7ffceb138a792cf57aeb71a98b405cb48e032932e473",
+          "edits": {
+            "../errors": "../errors.js",
+            "./api-client": "./api-client.js",
+            "../internal/abort": "../internal/abort.js",
+            "../internal/json": "../internal/json.js"
+          }
+        },
+        "dist/client/index.js": {
+          "before": "fe96833b80abaae1ddcfbf992f0e21e49e48b707f37fa9ba03ac160d6fed8620",
+          "after": "79df24234c83073bd75e4aea4b59ae83e26f780857dc0ed8332b68cc7dde98f7",
+          "edits": {
+            "./api-client": "./api-client.js",
+            "./http-client": "./http-client.js",
+            "./websocket-client": "./websocket-client.js"
+          }
+        },
+        "dist/events/index.js": {
+          "before": "bb4b93eb430e13d9be0309828bf8f8f4e57ae206ac5e49103b86005c065a88dc",
+          "after": "f7d925af0ceb4c4b888147feb7e8225432223550fdd128f06f299de7996120bb",
+          "edits": {
+            "./types": "./types.js",
+            "./guards": "./guards.js",
+            "./context": "./context.js",
+            "./command": "./command.js"
+          }
+        },
+        "dist/index.js": {
+          "before": "357383c4f77759936ca2984c080e01f87d4d31bdf718b8ad9c08c075775bdbf8",
+          "after": "eb81adaaff84b9859e04b35611de6835be84968283909f217ad195ba29824b5b",
+          "edits": {
+            "./client/api-client": "./client/api-client.js",
+            "./client/http-client": "./client/http-client.js",
+            "./client/websocket-client": "./client/websocket-client.js",
+            "./errors": "./errors.js",
+            "./events/index": "./events/index.js",
+            "./messages/index": "./messages/index.js"
+          }
+        },
+        "dist/messages/index.js": {
+          "before": "539a4e314a00d86d9f42d48ec825a43483d99bffe513fae3b781e7ea4fb095d3",
+          "after": "cc50250fb576586f6f1c3cb83da08337699bc95dbd97807a5249cff3ea54dce6",
+          "edits": {
+            "./segments": "./segments.js",
+            "./chain": "./chain.js",
+            "./cq-format": "./cq-format.js",
+            "./cq": "./cq.js"
+          }
+        },
+        "dist/types/index.js": {
+          "before": "545055c9453ccfb163dbc9dd0b68fe4b2faa9cc6ccb00e2a7c983043d0ecc894",
+          "after": "bb11578af7d294aa5e4527e1dec71518431bbaf8b2046b385a1df736ace0d1b8",
+          "edits": {
+            "./json": "./json.js",
+            "./messages": "./messages.js",
+            "./results": "./results.js",
+            "./params": "./params.js",
+            "./actions": "./actions.js",
+            "./events": "./events.js"
+          }
+        },
+        "dist/internal/json.js": {
+          "before": "668092c88c3917c5e21505c383b0e227929f333e473e75d127d5aaffb59c8183",
+          "after": "668092c88c3917c5e21505c383b0e227929f333e473e75d127d5aaffb59c8183",
+          "edits": {}
+        },
+        "dist/types/json.js": {
+          "before": "5f3964ad92ee5ab1fe09d8045cdbd941309a285e95a40010f75f7e7cdf832e19",
+          "after": "5f3964ad92ee5ab1fe09d8045cdbd941309a285e95a40010f75f7e7cdf832e19",
+          "edits": {}
+        },
+        "dist/types/messages.js": {
+          "before": "e6e95474ee9d0e95d9b3e5be1eafe0c2a8f93fcc8e5bf3547b4b6adbe65b8336",
+          "after": "e6e95474ee9d0e95d9b3e5be1eafe0c2a8f93fcc8e5bf3547b4b6adbe65b8336",
+          "edits": {}
+        },
+        "dist/types/params.js": {
+          "before": "334042a587b36ff5edaac0be62d1faf4ab0051088ca5a7c4691367e5f45b1638",
+          "after": "334042a587b36ff5edaac0be62d1faf4ab0051088ca5a7c4691367e5f45b1638",
+          "edits": {}
+        },
+        "dist/types/results.js": {
+          "before": "7e7e1f6124a01889cd8048782ad511fe9f16686dc5e22868a584023c0fd1076d",
+          "after": "7e7e1f6124a01889cd8048782ad511fe9f16686dc5e22868a584023c0fd1076d",
+          "edits": {}
+        },
+        "dist/messages/segments.js": {
+          "before": "e6880c84f8716e73cb562111d215cd5407db4ee245ea4b28c16f2b638bdec3ff",
+          "after": "e6880c84f8716e73cb562111d215cd5407db4ee245ea4b28c16f2b638bdec3ff",
+          "edits": {}
+        },
+        "dist/events/types.js": {
+          "before": "01ae2a5b120382f9a648ced7ee8507493a134f216d100fc61600c6c9738235d2",
+          "after": "01ae2a5b120382f9a648ced7ee8507493a134f216d100fc61600c6c9738235d2",
+          "edits": {}
+        },
+        "dist/client/websocket-client.js": {
+          "before": "a414fa98b5eec2420b1a23fb097363118199478be14c9ae7ecdea95035334ddd",
+          "after": "fc810321700d2ae3fe05fa7ae9a335f00dc00aa9b62da32c9ea7b7c5bb268794",
+          "edits": {
+            "../errors": "../errors.js",
+            "../emitter": "../emitter.js",
+            "../events/index": "../events/index.js",
+            "./api-client": "./api-client.js",
+            "../internal/abort": "../internal/abort.js",
+            "../internal/json": "../internal/json.js",
+            "./websocket-utils": "./websocket-utils.js"
+          }
+        },
+        "dist/client/websocket-types.js": {
+          "before": "070ddae2ba9aa1e533035b8b64c7927db1713e36c4af8a952996eb358b9a39b8",
+          "after": "070ddae2ba9aa1e533035b8b64c7927db1713e36c4af8a952996eb358b9a39b8",
+          "edits": {}
+        },
+        "dist/client/websocket-utils.js": {
+          "before": "c65053d8b639c82b87faad639946940f96fc13aadfdf8566757a0940cf833d74",
+          "after": "ec775d1f3792a30696e8d896c1dc9913a4388adc3c66a4148071959dc91b6878",
+          "edits": {
+            "../internal/json": "../internal/json.js"
+          }
+        }
+      }
+    },
+    "@snowluma/mcp": {
+      "version": "1.14.20",
+      "files": {
+        "dist/generated/catalog.js": {
+          "before": "2dd33a2c6d18a79c706f37dfe585bcf13a1ba43c65a6646a0fc79de0c8c2dde0",
+          "after": "2dd33a2c6d18a79c706f37dfe585bcf13a1ba43c65a6646a0fc79de0c8c2dde0",
+          "edits": {}
+        },
+        "dist/client.js": {
+          "before": "b14ce0bf483ab63a47ca7219e167099b6f93886a9c3b3f71d3a191de4b01b0c9",
+          "after": "b14ce0bf483ab63a47ca7219e167099b6f93886a9c3b3f71d3a191de4b01b0c9",
+          "edits": {}
+        },
+        "dist/server.js": {
+          "before": "932d593e857ec1052db816fcef7587d33aad8f5f50ba5b74943968ec7246c774",
+          "after": "932d593e857ec1052db816fcef7587d33aad8f5f50ba5b74943968ec7246c774",
+          "edits": {}
+        },
+        "dist/tools.js": {
+          "before": "36ff0a4a81986e857e630cb0b39c5153d71f95e7359e3159feb8bcbe468a71d2",
+          "after": "36ff0a4a81986e857e630cb0b39c5153d71f95e7359e3159feb8bcbe468a71d2",
+          "edits": {}
+        },
+        "dist/types.js": {
+          "before": "b0d3f9baf27b9002d2576e561222e2cfc90f455a8549de8265d16266433af758",
+          "after": "b0d3f9baf27b9002d2576e561222e2cfc90f455a8549de8265d16266433af758",
+          "edits": {}
+        }
+      }
+    }
+  }
+}

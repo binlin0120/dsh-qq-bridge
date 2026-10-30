@@ -29,8 +29,8 @@
 
 | 机制 | 位置 | 行为 |
 | --- | --- | --- |
-| 白名单 | `src/bridge.js` `allowed()` | `deny` 优先于 `allow`；两侧统一 `String()` 比较（兼容 OneBot int64 的数字/字符串差异）；allow 为空时返回 `allowAllWhenEmpty`（**默认 false**） |
-| 模式门 | `modeAllowed()` / `isSessionAllowedInCurrentMode()` | 会话 key 必须严格匹配 `^(group\|private):\d+$`；`closed-agent` 只放行 `private:<ownerQQ>` |
+| 白名单 | `src/access-policy.mjs` `allowed()` | `deny` 优先于 `allow`；两侧统一 `String()` 比较（兼容 OneBot int64 的数字/字符串差异）；allow 为空时拒绝普通会话；`allowAllWhenEmpty: true` 在启动和热更新时拒绝 |
+| 模式门 | `modeAllowed()` / `isSessionAllowedInCurrentMode()` | 会话 key 必须严格匹配 `^(group\|private):\d+$`；`closed-agent` 根据名单区分主人、管理员、访客与群；完整宿主工具只给主人私聊，其余要求受限预设 |
 | 配置失败 | `loadConfig()` | `config.json` 缺失/解析失败 → **fail-fast 退出**（不是"用默认值继续跑"） |
 | 管理员识别 | `handleIncoming()` | `String(event.user_id) === String(cfg.ownerQQ ?? '')`；未配置 `ownerQQ` 时启动日志明确告警（审批/管理命令/封闭 agent 全部不可用） |
 
@@ -53,6 +53,14 @@
 | CQ 注入 | `onebotSend()` | 出站文本一律包成 `{type:'text'}` 段并做 `[CQ:` → `[CQ：` 转义，杜绝 CQ 码注入 |
 | @ 限制 | `onebotSend()` | `atUserId` 只接受正整数，禁止 `@all` |
 | 发送限流 | `socialV2.send.*` / `voice.*` / `sticker.collect.*` | 每分钟/每小时硬上限，超限拒绝并退避 |
+
+### 当前维护版补充边界
+
+- 群友在 `closed-agent` 下明确请求新图时，由真实发言者和当前消息铸造仅限本群、仅限照片的授权；按 QQ 号跨群共用每日 1 张，入队前原子落盘。关闭通用用量限制不能绕过此额度；重启不清零。主人原有权限不消耗群友额度。
+- 群聊照片执行前及发送前重新检查名单、群成员状态和权限代次；共享模型回合不能自行取得主人授权。讨论截图与询问能力不提交新图。
+- 好友申请落盘后独立通知主人；未知审批或通知结果不自动重试。审批需当前主人明确指令，平台好友列表回读后才确认接受。
+- 未处理异常进入停止准入、最小状态保存和非零退出路径，交由进程管理器重启；超时与取消撤销晚到投递。后台原始报告先转换为适合当前会话的回复，转换失败不回退到原始内部内容。
+- 换对话的交接包括当前作用域记忆和近期记录，校验成功才替换映射；群友长期摘要在第一条实际提示注入后才确认已读。私人事实与好友申请详情不能跨入其他会话。
 
 ### 4. 控制台（本机最高权限入口）
 

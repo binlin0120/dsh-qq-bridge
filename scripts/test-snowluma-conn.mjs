@@ -1,3 +1,4 @@
+import {readBridgeAuditFile} from './bridge-source.mjs';
 // SnowLuma 账号/token 自发现自检。
 //
 // 背景（实测确认的根因）：SnowLuma 的 OneBot 配置按账号分文件
@@ -23,7 +24,7 @@ const ok = (cond, name, extra = '') => {
 };
 // 工具不在本仓库里时返回 null，让下面几条桥接侧断言仍能照跑（读源码不该因为
 // 一个不在仓库里的目录而整个抛掉）。
-const readTool = (rel) => (hasVoiceTool() ? fs.readFileSync(voiceToolPath(rel), 'utf8') : null);
+const readTool = (rel) => (hasVoiceTool() ? readBridgeAuditFile(voiceToolPath(rel), 'utf8') : null);
 
 console.log('## home 目录推断');
 {
@@ -94,7 +95,7 @@ console.log('## token 写回 config.json');
   fs.writeFileSync(cfgPath, JSON.stringify({ snowluma: { httpUrl: 'http://127.0.0.1:3000', accessToken: 'old-token' }, allow: { groups: [1] } }, null, 2), 'utf8');
   const r1 = persistToken(cfgPath, 'new-token');
   ok(r1.updated === true && r1.from === 'old-token', '换 token 时写入');
-  const after = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+  const after = JSON.parse(readBridgeAuditFile(cfgPath, 'utf8'));
   ok(after.snowluma.accessToken === 'new-token', 'config.json 已更新');
   ok(after.allow.groups[0] === 1, '其它配置字段未被破坏');
   const r2 = persistToken(cfgPath, 'new-token');
@@ -112,7 +113,7 @@ console.log('## 独立工具确实用它（源码级）');
     ok(/discoverSnowLumaConnection/.test(src), `${rel} 调用自动发现`);
   }
   // ↓ 下面两条查的是本仓库的 bridge.js，与工具在不在无关，照跑。
-  const bridge = fs.readFileSync(path.join(ROOT, 'src', 'bridge.js'), 'utf8');
+  const bridge = readBridgeAuditFile(path.join(ROOT, 'src', 'bridge.js'), 'utf8');
   ok(/healTokenIfStale/.test(bridge), 'bridge 有 token 自愈');
   ok(/persistToken/.test(bridge), 'bridge 会把有效 token 写回 config.json');
 }
