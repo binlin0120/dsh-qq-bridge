@@ -103,3 +103,10 @@ test('真实人格卡可用，且筛选不丢公共内容', () => {
     for(const line of section.lines.filter(x=>x.trim())){assert.ok(v1.includes(line));assert.ok(v2.includes(line));}
   }
 });
+
+test('CRLF and LF role cards retain identical shared and mode-specific content',()=>{
+ const nl=String.fromCharCode(10),cr=String.fromCharCode(13);
+ const lf=['# Common','shared opening','','## Private mode [v1]','v1 only','','## Shared','shared final line',''].join(nl),crlf=lf.replaceAll(nl,cr+nl);
+ assert.equal(parseRoleSections(lf).length,3);assert.deepEqual(parseRoleSections(crlf),parseRoleSections(lf));
+ for(const mode of ['v1','v2']){assert.equal(selectRoleText(crlf,mode),selectRoleText(lf,mode));assert.ok(selectRoleText(crlf,mode).includes('shared final line'));assert.ok(!selectRoleText(crlf,mode).includes(cr));}
+});
