@@ -459,6 +459,21 @@ function sendMessagesV2(key, messages, delays, replyToMessageId, atUserId = null
       }
       return false;
     }
+    // 主动分享按聊天段落发送；完整正文必须在拆分前完成上述审计。
+    // 整批复用最初的发送世代，避免换会话后继续发送剩余气泡。
+    if(options.chatSegments===true){
+      const segments=splitChatSegments(text);
+      if(!segments.length)return false;
+      const assertBatchAllowed=captureSendGuard(key);
+      const capabilityGuard=()=>{assertBatchAllowed();options.capabilityGuard?.();};
+      for(let i=0;i<segments.length;i++){
+        capabilityGuard();
+        const receipt=await sendToQQ(key,segments[i],{...options,capabilityGuard});
+        if(!receipt.ok)return false;
+        if(i<segments.length-1)await deps.sleep(3000);
+      }
+      return true;
+    }
     const receipt=await sendToQQ(key, text, options);
     return receipt.ok;
   }

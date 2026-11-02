@@ -1,5 +1,5 @@
 // media: explicit live dependencies preserve shared state and authority boundaries.
-export const dependencies=["AbortSignal","DRAW_DIR","MAX_MEDIA_PIXELS","PHOTO_LOOK","ROOT","STATE_DIR","assertGroupMedia","groupAuthority","canSendNow","caps","cfg","dailyQuota","downloadImage","escapeCqText","fetch","fs","getImageDimensions","handleCompanionActions","imageResult","inQuietHours","isOwnerKey","log","looksLikeImageBuffer","mediaFailure","mediaJobs","memoryHistory","noteGuestChat","noteOutsideShare","noteOwnerChat","noteRelay","oneBotCall","os","outTarget","ownerChat","ownerMemoryScope","parallelDownloadImage","path","photoPublicReply","preparePhotoReferences","process","readImageJson","readJsonSafe","renderTaskNotice","resolveSafeAddresses","sayBridge","scrubPrivate","selectImageDownloadIps","sendChain","shortChain","sleep","sleepMs","state","submitImageTask","takeQuota","temporal","truncateText","validateFetchUrl"];
+export const dependencies=["buildArtworkPrompt","imagePollError","AbortSignal","DRAW_DIR","MAX_MEDIA_PIXELS","PHOTO_LOOK","ROOT","STATE_DIR","assertGroupMedia","groupAuthority","canSendNow","caps","cfg","dailyQuota","downloadImage","escapeCqText","fetch","fs","getImageDimensions","handleCompanionActions","imageResult","inQuietHours","isOwnerKey","log","looksLikeImageBuffer","mediaFailure","mediaJobs","memoryHistory","noteGuestChat","noteOutsideShare","noteOwnerChat","noteRelay","oneBotCall","os","outTarget","ownerChat","ownerMemoryScope","parallelDownloadImage","path","photoPublicReply","preparePhotoReferences","process","readImageJson","readJsonSafe","renderTaskNotice","resolveSafeAddresses","sayBridge","scrubPrivate","selectImageDownloadIps","sendChain","shortChain","sleep","sleepMs","state","submitImageTask","takeQuota","temporal","truncateText","validateFetchUrl"];
 export function createMedia(deps){
 async function sendImageTo(key, buffer, caption, guard) {
     deps.outTarget(key);
@@ -67,7 +67,7 @@ async function curlDownload(u, tmp, job) {
       await deps.sleepMs(5000);
       try {
         const q = await deps.fetch(`${base}/task/${encodeURIComponent(tid)}`, { headers, signal: deps.AbortSignal.timeout(Math.max(1000,Math.min(30000,pollDeadline-Date.now()))) });
-        if(!q.ok)throw Object.assign(Error('图片进度查询 HTTP '+q.status),{code:'IMAGE_POLL_PENDING'});
+        if(!q.ok)throw deps.imagePollError(q.status);
         const qj = await deps.readImageJson(q).catch(error => {throw Error('画图失败：结果响应无效或超过限制');});
         if (qj.status === 'failed' || qj.status === 'error' || qj.status === 'cancelled') throw Object.assign(new Error(`画图失败：${deps.truncateText(JSON.stringify(qj.error ?? qj.result ?? qj.status), 200)}`),{code:'IMAGE_GENERATION_FAILED'});
         if(qj.status==='completed'){
@@ -75,7 +75,7 @@ async function curlDownload(u, tmp, job) {
           catch(e){throw Error('画图失败：'+e.message);}
         }
       } catch (error) {
-        if (String(error?.message).startsWith('画图失败')) throw error;
+        if(error.terminal||String(error?.message).startsWith('画图失败'))throw error;if(error.code)throw error;throw Object.assign(Error('图片进度查询网络异常'),{code:'IMAGE_POLL_PENDING',cause:error});
       }
     }
     if (!url&&!buf) throw Object.assign(new Error('图片仍在原任务中等待结果'),{code:'IMAGE_POLL_PENDING'});
@@ -99,7 +99,7 @@ function validateImage(buf) {
 
 async function runMediaJob(j) {
     if(j.chainRequestId&&deps.shortChain){const r=deps.shortChain.record(j.chainRequestId);if(!r||r.cancelledAt||j.chainCancelled)return;deps.shortChain.guard({...r,owner:true},r);}
-    if(j.character&&j.target.startsWith('group:'))await deps.assertGroupMedia(j.authorization,j.target,'photo');
+    if(j.target.startsWith('group:'))await deps.assertGroupMedia(j.authorization,j.target,'photo');
     deps.outTarget(j.target);
     if(!deps.canSendNow(j.target,{direct:j.direct===true})) {
       const d=new Date(Date.now()+8*3600000);const next=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()+(d.getUTCHours()>=23?1:0),0);
@@ -111,7 +111,7 @@ async function runMediaJob(j) {
     }
     deps.outTarget(j.target);
     if(!deps.canSendNow(j.target,{direct:j.direct===true})) {deps.mediaJobs.update(j,{status:'queued',nextAt:Date.now()+60000});return;}
-    if(j.character&&j.target.startsWith('group:'))await deps.assertGroupMedia(j.authorization,j.target,'photo');
+    if(j.target.startsWith('group:'))await deps.assertGroupMedia(j.authorization,j.target,'photo');
     if(j.character&&Date.now()-j.at>30*60000&&!j.captionRefreshed){
       j.caption=await deps.renderTaskNotice({key:j.target,task:'把此前用户要求的照片补给对方',status:'running',stage:'原照片已完整保存，尚未发送',scene:j.scene},{kind:'delayed_photo',originalScene:j.scene,originalAt:j.at,originalCaption:j.caption,requirement:'沿用原照片场景，不说刚拍，不追问用户是否还醒着'});j.captionRefreshed=true;deps.mediaJobs.save();
     }
@@ -119,7 +119,7 @@ async function runMediaJob(j) {
     if(j.character&&deps.isOwnerKey(j.target)&&(deps.state.ownerQuiet||(deps.inQuietHours()&&/晚安|睡了|睡觉|马上就睡|^眠$/.test(latestOwnerText)))){deps.mediaJobs.update(j,{status:'queued',phase:'file_ready',nextAt:Date.now()+15*60000});return;}
     if(j.chainRequestId&&deps.shortChain){const r=deps.shortChain.record(j.chainRequestId);deps.shortChain.guard({...r,owner:true},r);}
     deps.mediaJobs.update(j,{status:'sending'});
-    const imageGuard=()=>{if(j.chainRequestId&&deps.shortChain){const r=deps.shortChain.record(j.chainRequestId);deps.shortChain.guard({...r,owner:true},r);}if(j.character&&j.target.startsWith('group:'))return deps.assertGroupMedia(j.authorization,j.target,'photo');};const imageReceipt=await sendImageTo(j.target,deps.fs.readFileSync(j.file),j.caption,imageGuard);
+    const imageGuard=()=>{if(j.chainRequestId&&deps.shortChain){const r=deps.shortChain.record(j.chainRequestId);deps.shortChain.guard({...r,owner:true},r);}if(j.target.startsWith('group:'))return deps.assertGroupMedia(j.authorization,j.target,'photo');};const imageReceipt=await sendImageTo(j.target,deps.fs.readFileSync(j.file),j.caption,imageGuard);
     if(imageReceipt===null||imageReceipt===undefined)throw Error('图片发送结果未知，不能确认送达');
     deps.mediaJobs.update(j,{status:'completed',phase:'completed',deliveryMessageId:imageReceipt,doneAt:Date.now(),error:null,nextAt:0});if(j.chainRequestId&&deps.shortChain){const r=deps.shortChain.record(j.chainRequestId);if(r&&!r.cancelledAt){r.status='completed';r.result='照片已确认发送';deps.shortChain.put(r);}}
     deps.temporal.verified(j.target,{entity:'照片送达:'+j.id,description:j.scene||j.prompt||'图片',status:'completed',at:j.doneAt,sourceId:j.id,sourceKind:'qq_delivery_receipt'});
@@ -146,19 +146,19 @@ async function processMediaJob(j){
     }
   }
 
-function photoPrompt(scene){return deps.PHOTO_LOOK+'\n当前生活场景：'+deps.scrubPrivate(scene);}
+function photoPrompt(scene,artifactType='photo'){return artifactType==='photo'?deps.PHOTO_LOOK+'\n当前生活场景：'+deps.scrubPrivate(scene):deps.buildArtworkPrompt(artifactType,deps.scrubPrivate(scene));}
 
-async function queueCharacterPhoto(key,scene,{caption='',direct=true,authorization=null}={}){
+async function queueCharacterPhoto(key,scene,{caption='',direct=true,authorization=null,artifactType='photo',requestKey=null}={}){
     if(key.startsWith('group:'))await deps.assertGroupMedia(authorization,key,'photo');deps.outTarget(key);
     if(key.startsWith('private:')&&!deps.isOwnerKey(key)&&!deps.cfg.guestPhotos.enabled)throw Error('照片暂时发不了');
     if(/身份证|住址|手机号|色情|裸体|内衣|比基尼|未成年|真名|机主|机主|其他人|别人的照片|真实朋友|两个人/.test(scene))throw Error('这个不拍 换个日常的吧');
-    const prompt=photoPrompt(scene);const old=Object.values(deps.mediaJobs.data).find(j=>j.target===key&&(key.startsWith('group:')?j.authorization?.id===authorization?.id:j.prompt===prompt&&Date.now()-j.at<600000&&!['failed','uncertain'].includes(j.status)));if(old)return old;
+    if(!['photo','poster','illustration','image'].includes(artifactType))throw Error('图片作品类型无效');const prompt=photoPrompt(scene,artifactType);const old=Object.values(deps.mediaJobs.data).find(j=>j.target===key&&(requestKey?j.requestKey===requestKey:key.startsWith('group:')?j.authorization?.id===authorization?.id:!j.requestKey&&j.prompt===prompt&&Date.now()-j.at<600000&&['queued','running','submitting'].includes(j.status)));if(old)return old;
     const guestPhoto=!deps.isOwnerKey(key)&&!key.startsWith('group:');
     if(guestPhoto||authorization?.kind==='member'){if(deps.cfg.usageLimits&&deps.dailyQuota.count('draw')>=deps.cfg.draw.dailyLimit-deps.cfg.guestPhotos.ownerReserve)throw Error('今天照片额度不够啦');if(guestPhoto&&deps.dailyQuota.count('guest:'+key)>=deps.cfg.guestPhotos.perDay)throw Error('今天先不拍了');}
     if(deps.cfg.usageLimits&&deps.dailyQuota.count('draw')>=deps.cfg.draw.dailyLimit)throw Error('今天照片额度不够啦');
     if(authorization?.kind==='member')deps.groupAuthority.admitMember(authorization,key);
     if(guestPhoto)deps.dailyQuota.take('guest:'+key,deps.cfg.guestPhotos.perDay);deps.takeQuota('draw',deps.cfg.draw.dailyLimit);
-    return deps.mediaJobs.add({kind:'draw',target:key,prompt,caption:String(caption).slice(0,400),guest:guestPhoto||authorization?.kind==='member',character:true,direct,authorization,scene:String(scene).slice(0,500)});
+    return deps.mediaJobs.add({kind:'draw',target:key,prompt,caption:String(caption).slice(0,400),guest:guestPhoto||authorization?.kind==='member',character:artifactType==='photo',artifactType,requestKey,direct,authorization,scene:String(scene).slice(0,500)});
   }
 
 async function handleGuestPhoto(key,plain) {return deps.handleCompanionActions(key,plain);}

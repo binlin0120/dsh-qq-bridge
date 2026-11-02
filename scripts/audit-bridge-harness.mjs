@@ -10,6 +10,7 @@ import * as episodicConsolidatorLib from '../src/memory-consolidator.mjs';
 import * as reminderLib from '../src/reminder-ledger.mjs';
 import * as photoDeliveryLib from '../src/photo-delivery.mjs';
 import * as chainLib from '../src/short-chain.mjs';
+import * as imagePlanLib from '../src/image-plan.mjs';
 import {stopIntent,taskCanDeliver} from '../src/stop-delivery.mjs';
 import {OwnerMaintenanceBroker} from '../src/owner-maintenance.mjs';
 import {Orchestrator} from '../src/orchestrator.mjs';
@@ -217,7 +218,7 @@ export async function bridgeHarness({ config = {}, savedState, files = {}, globa
     discoverDshLaunchToken: () => '', unwrap, createTurnCollector,
     ...markdown, ...sensitive, ...wait, ...safeFetch, ...forward, ...slang, ...sticker,
     ...modelPrices, ...tokenLedger, ...voiceLib, ...stateAcl, ...presetPrompt, ...reliability, ...roleCard, ...capabilities, ...memoryBookLib, ...groupContextLib, ...taskProgressLib, ...imageDownloadLib, ...imageResultLib, ...progressNarratorLib, ...outboxLib, ...memoryQueueLib, ...episodicStoreLib, ...episodicRetrievalLib, ...episodicConsolidatorLib, ...temporalLib, ...invocationLib, ...parallelDownloadLib, ...companionGateLib, ...socialPublishingLib,
-    QqRequestService,buildConversationPersona,CONVERSATION_STYLE,...dshProtocolLib,...accessPolicyLib,...operationDeadlineLib,...reminderLib,...photoDeliveryLib,submitImageTask:async()=>{throw Error('Fixture image submission requires an explicit test transport');},...chainLib,Orchestrator,OwnerMaintenanceBroker,stopIntent,taskCanDeliver,parseAgentObject,classifyModelError,
+    QqRequestService,buildConversationPersona,CONVERSATION_STYLE,...dshProtocolLib,...accessPolicyLib,...operationDeadlineLib,...reminderLib,...photoDeliveryLib,submitImageTask:async()=>{throw Error('Fixture image submission requires an explicit test transport');},...imagePlanLib,...chainLib,Orchestrator,OwnerMaintenanceBroker,stopIntent,taskCanDeliver,parseAgentObject,classifyModelError,
     ...serviceVoiceLib,composeServiceReply:async ({facts})=>facts.text,
     TaskProgress: class extends taskProgressLib.TaskProgress { constructor(file,options){super(file,{...options,render:async(j,facts)=>j.stage||JSON.stringify(facts)});} },
     // ACL 收紧会 spawn icacls 去改**真实**文件系统；测试不该做这件事（同理见下面的

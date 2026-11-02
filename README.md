@@ -1,6 +1,6 @@
 # DSH-QQ Bridge · DSH-QQ 任务桥（QQ ↔ DeepSeek Harness）
 
-> 当前可迁移版本已包含持久化提醒、分层记忆、故障恢复、好友申请回读与群友图片日额度。更新与升级注意事项见 [发布说明](docs/RELEASE_NOTES.md)，开发结构见 [架构说明](docs/ARCHITECTURE.md)。首次部署、目录与记忆配置、图片服务协议和验证范围见 [可迁移部署说明](docs/guides/PORTABLE_DEPLOYMENT.md)。私有配置、会话、记忆、音频和角色参考图不随仓库提供。
+> 当前可迁移版本已包含持久化提醒、分层记忆、故障恢复、好友申请回读、群友图片日额度，以及区分海报/插画/照片的图片执行与原图复用。更新与升级注意事项见 [发布说明](docs/RELEASE_NOTES.md)，开发结构见 [架构说明](docs/ARCHITECTURE.md)。首次部署、目录与记忆配置、图片服务协议和验证范围见 [可迁移部署说明](docs/guides/PORTABLE_DEPLOYMENT.md)。私有配置、会话、记忆、音频和角色参考图不随仓库提供。
 
 **English**: [README.en.md](README.en.md) | **中文**: [README.md](README.md)
 

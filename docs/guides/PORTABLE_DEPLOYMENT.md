@@ -35,7 +35,7 @@ npm start
 
 图片适配器使用异步任务协议：`POST <draw.baseUrl>/task/submit` 提交 `{model,input}`，以返回的任务 ID 查询 `GET <draw.baseUrl>/task/<id>`。需要选择支持该协议的服务；仅有标准 OpenAI 图片端点的服务需要另行适配。
 
-在私有 `config.json` 配置 `draw.baseUrl`、`draw.model`，并把两张自行准备的角色参考图路径填入 `draw.referenceFiles`。密钥只从 `draw.apiKeyEnv` 指定的环境变量读取，默认变量名为 `IMAGE_API_KEY`。不要把密钥填进源码或公开文档。参考图应放在被忽略的 `workspace/` 内；处理依赖 Pillow。缺少配置会在提交付费任务之前停止。
+在私有 `config.json` 配置 `draw.baseUrl`、`draw.model`。角色照片需把两张自行准备的参考图路径填入 `draw.referenceFiles`；主人短链的海报、插画与通用作品不读取或上传角色参考图。密钥只从 `draw.apiKeyEnv` 指定的环境变量读取，默认变量名为 `IMAGE_API_KEY`。不要把密钥填进源码或公开文档。参考图应放在被忽略的 `workspace/` 内；处理依赖 Pillow。缺少配置会在提交付费任务之前停止。
 
 参考图只生成缓存副本，原图不覆盖。上传结果不明确时保存待核实状态，避免再次付费提交。照片测试使用临时生成的红蓝色图片，不依赖私人形象素材。
 

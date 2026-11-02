@@ -62,6 +62,8 @@ import {MemoryStore,memoryId,memoryText} from './memory-store.mjs';
 import {recallMemory,memoryContext} from './memory-retrieval.mjs';
 import {MemoryConsolidator} from './memory-consolidator.mjs';
 import { TaskProgress, isLongTask, ownerTaskResource, independentControlRequest, progressBlock, withoutProgress } from './task-progress.mjs';
+import {buildArtworkPrompt} from './image-plan.mjs';
+import {imagePollError} from './photo-delivery.mjs';
 import {GroupPolicy,publicGroupPolicy,GroupMediaAuthority,groupMessage,selectGroupContext,publicGroupMessage,bareMention,mediaIntent,cardSummary} from './group-context.mjs';
 import {MemoryBook,memoryRevision} from './memory-book.mjs';
 import {TemporalContext,beijingTime,historicalScene,messageTiming} from './temporal-context.mjs';
@@ -2222,6 +2224,8 @@ async function main() {
     get DRAW_DIR(){return DRAW_DIR;},
     get MAX_MEDIA_PIXELS(){return MAX_MEDIA_PIXELS;},
     get PHOTO_LOOK(){return PHOTO_LOOK;},
+    get buildArtworkPrompt(){return buildArtworkPrompt;},
+    get imagePollError(){return imagePollError;},
     get ROOT(){return ROOT;},
     get STATE_DIR(){return STATE_DIR;},
     get assertGroupMedia(){return assertGroupMedia;},
@@ -3644,7 +3648,13 @@ async function main() {
         if(a.type==='stop_legacy'){if(!taskProgress.current(ownerKey)&&!orchestrator.context(ownerKey).some(g=>!['delivered','failed','cancelled','uncertain','blocked_external'].includes(g.status)))return [];await handleUrgentStop(ownerKey,c.text,c.eventId);return [{status:'cancel_requested',scope:'旧执行入口'}];}
         if(a.type==='memory')return applyMemoryAction(c,a);
         if(a.type==='media'){
-          if(a.kind==='photo'&&c.origin===ownerKey){const j=await queueCharacterPhoto(ownerKey,a.scene||c.text,{caption:'',direct:true});mediaJobs.update(j,{chainRequestId:meta.requestId});return {status:'running',externalId:j.id,engine:'media',alreadyDelivered:false};}
+          if(a.kind==='photo'){
+            let target=!a.target||a.target==='current'?c.origin:String(a.target);
+            if(!/^(private|group):\d+$/.test(target)||target!==c.origin&&target!==ownerKey&&!c.text.includes(target.split(':')[1]))target=await resolveOwnerGroupTarget(c.origin,c.text);
+            outTarget(target);meta.guard();let authorization=null;if(target.startsWith('group:')){authorization=groupAuthority.issue({actor:c.actorQQ,sourceKey:c.origin,sourceId:c.eventId,target,action:'photo',text:c.text});await assertGroupMedia(authorization,target,'photo');}
+            const requestKey=meta.requestId+':'+meta.actionIndex,j=await queueCharacterPhoto(target,a.scene||c.text,{caption:'',direct:true,authorization,artifactType:a.artifactType||'photo',requestKey});
+            if(j.chainRequestId&&j.chainRequestId!==meta.requestId)throw Error('图片任务来源不匹配');mediaJobs.update(j,{chainRequestId:meta.requestId});return {status:j.status,externalId:j.id,engine:'media',target,alreadyDelivered:j.status==='completed'};
+          }
           if(a.kind==='sticker'){
             let target=!a.target||a.target==='current'?c.origin:String(a.target);
             if(!/^(private|group):\d+$/.test(target)||target!==c.origin&&target!==ownerKey&&!c.text.includes(target.split(':')[1]))target=await resolveOwnerGroupTarget(c.origin,c.text);
@@ -3658,6 +3668,11 @@ async function main() {
           if(target!==c.origin&&target!==ownerKey&&!c.text.includes(target.split(':')[1]))target=await resolveOwnerGroupTarget(c.origin,c.text);
           outTarget(target);
           if(a.kind==='forward'){
+            if(a.imageJobId){const original=mediaJobs.data[a.imageJobId];if(!original||original.target!==c.origin||original.status!=='completed'||!original.file)throw Error('原图没有找到，不会重新生成');
+              const real=fs.realpathSync(original.file),relative=path.relative(fs.realpathSync(DRAW_DIR),real);if(!relative||relative==='..'||relative.startsWith('..'+path.sep)||path.isAbsolute(relative))throw Error('原图位置不属于图片目录');
+              const bytes=fs.readFileSync(real);validateImage(bytes);meta.guard();let auth;if(target.startsWith('group:')){auth=groupAuthority.issue({actor:c.actorQQ,sourceKey:c.origin,sourceId:c.eventId,target,action:'photo',text:c.text});await assertGroupMedia(auth,target,'photo');}
+              const receipt=await sendImageTo(target,bytes,'',()=>{meta.guard();if(auth)return assertGroupMedia(auth,target,'photo');});if(receipt===undefined||receipt===null)throw Error('原图发送尚未确认');return result({sent:true,target,reusedOriginal:true,newGeneration:false});
+            }
             const reply=String((c.event?.message||[]).find(x=>x.type==='reply')?.data?.id||'');let media=(c.media||[]).find(x=>x.kind==='image');
             if(!media&&reply){try{media=caps.media(c.origin,reply,1);}catch{}if(!media){const msg=await oneBotCall('get_msg',{message_id:Number(reply)});const same=c.origin.startsWith('group:')?String(msg.group_id)===c.origin.split(':')[1]:!msg.group_id&&[String(msg.user_id),String(msg.sender?.user_id)].includes(c.actorQQ);if(same)media=extractMediaFromSegments(msg.message||[]).find(x=>x.kind==='image');}}
             if(!media)throw Error('还没唯一找到要转发的原图，引用那张就能直接发，不会重新拍');const bytes=(await fetchOneBotImage(media))?.buffer;if(!bytes)throw Error('原图暂时未取到，没有重新拍');validateImage(bytes);meta.guard();let auth;if(target.startsWith('group:')){auth=groupAuthority.issue({actor:c.actorQQ,sourceKey:c.origin,sourceId:c.eventId,target,action:'photo',text:c.text});await assertGroupMedia(auth,target,'photo');}

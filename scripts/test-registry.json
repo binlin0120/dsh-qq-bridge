@@ -49,6 +49,10 @@
       "tier": "features",
       "reason": "Mock services and isolated temporary state."
     },
+    "test-companion-segments.mjs": {
+      "tier": "features",
+      "reason": "Isolated companion delivery, paragraph formatting, full audit and cancellation guards; no live transports."
+    },
     "test-console-encoding.mjs": {
       "tier": "audit",
       "reason": "Offline fixtures; optional external sections remain disabled."
@@ -121,6 +125,10 @@
       "tier": "features",
       "reason": "Mock services and isolated temporary state."
     },
+    "test-image-plan.mjs": {
+      "tier": "features",
+      "reason": "Captured real multi-turn image decisions, artwork type, idempotence, target routing and HTTP classification."
+    },
     "test-image-upload-routes.mjs": {
       "tier": "features",
       "reason": "Mock services and isolated temporary state."
@@ -184,6 +192,10 @@
     "test-persona-social.mjs": {
       "tier": "features",
       "reason": "Mock services and isolated temporary state."
+    },
+    "test-photo-execution.mjs": {
+      "tier": "features",
+      "reason": "Isolated picture intent, grounded acknowledgements and real worker submission with captured transports."
     },
     "test-photo-repair.mjs": {
       "tier": "features",

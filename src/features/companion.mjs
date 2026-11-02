@@ -23,7 +23,7 @@ async function deliverCompanionShare(pending,text){
     if(!body||deps.isSilentMarker(body)){deps.log("主动分享：本轮不分享（静默）");return;}
     body=String(await deps.handleCompanionActions(key,body,{sessionId:pending.sessionId})??"").trim();
     if(!body||deps.isSilentMarker(body)){deps.log("主动分享：本轮只有媒体动作，无正文代发");return;}
-    const ok=await deps.auditAndSend(key,body);
+    const ok=await deps.auditAndSend(key,body,{chatSegments:true});
     if(ok){deps.noteOwnerChat("out",`（你主动发的分享）${body}`,{kind:"companion_share"});deps.noteOutsideShare(key,body);deps.log(`主动分享已由桥接代发（${body.length} 字）`);}
     else deps.log("主动分享代发未成功（发送失败或被安全策略拦截）");
   }

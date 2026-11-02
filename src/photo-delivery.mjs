@@ -5,6 +5,12 @@ import https from 'node:https';
 import {execFile} from 'node:child_process';
 import {selectUploadRoute} from './image-upload-routes.mjs';
 
+export function imagePollError(status){
+ const terminal=status===401||status===403||status===404||status>=400&&status<500&&![408,429].includes(status);
+ const code=status===401||status===403?'IMAGE_POLL_AUTH':status===404?'IMAGE_POLL_NOT_FOUND':terminal?'IMAGE_POLL_REJECTED':'IMAGE_POLL_PENDING';
+ return Object.assign(Error('图片进度查询 HTTP '+status),{code,httpStatus:status,terminal});
+}
+
 export function photoStatusQuestion(text){
  const t=String(text).trim();
  if(/重拍|重新拍|再拍|重发|重新发|再发|停止|取消|别发|不用发|帮我|发到|发给.*(?:群|别人)/.test(t))return false;
@@ -27,6 +33,7 @@ export function mediaFailure(error,j){
  if(j.chainCancelled||code==='MEDIA_CANCELLED')return {status:'cancelled',phase:'cancelled',retryable:false,code:'MEDIA_CANCELLED'};
  if(code==='IMAGE_SUBMISSION_UNKNOWN'||j.submissionState==='unknown')return {status:'uncertain',phase:'submission_unknown',retryable:false,code:'IMAGE_SUBMISSION_UNKNOWN'};
  if(j.status==='sending'||j.phase==='delivery_unknown')return {status:'uncertain',phase:'delivery_unknown',retryable:false,code:'IMAGE_DELIVERY_UNKNOWN'};
+ if(['IMAGE_POLL_AUTH','IMAGE_POLL_NOT_FOUND','IMAGE_POLL_REJECTED'].includes(code))return {status:'failed',phase:'poll_rejected',retryable:false,code};
  if(code==='IMAGE_GENERATION_FAILED'||code==='IMAGE_SUBMIT_REJECTED'||code==='IMAGE_REFERENCE_INVALID'||code==='IMAGE_NOT_FOUND'||/HTTP 40[034]/.test(error.message))return {status:'failed',phase:j.phase||'failed',retryable:false,code:code||'IMAGE_REQUEST_REJECTED'};
  const network=/TRANSPORT_NO_RESPONSE|DOWNLOAD_BUDGET_EXHAUSTED|IMAGE_SERVER_UNAVAILABLE|IMAGE_POLL_PENDING/.test(code)||/下载画好的图失败|保留.*断点|fetch failed|超时|timeout|timed out|ECONN|ETIMEDOUT|aborted/i.test(error.message);
  if((j.taskId||j.resultUrl)&&network)return {status:'queued',phase:j.resultUrl?'retry_wait':'poll_wait',retryable:true,code:code||'IMAGE_TRANSPORT_RETRY'};
