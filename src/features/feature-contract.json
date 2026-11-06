@@ -361,7 +361,7 @@
   },
   "retireSession": {
     "file": "session-policy.mjs",
-    "sha256": "21bf5e5cd4f498156f3316f1e41adcdc0e17804a37571d949fc254297883d008"
+    "sha256": "2c22e372960d8497fb1a05663e704e9fc1c1a174cfc1e2c0679ea1e6568c4197"
   },
   "reconcileSessionPolicies": {
     "file": "session-policy.mjs",
@@ -369,7 +369,7 @@
   },
   "startConsoleServer": {
     "file": "console-server.mjs",
-    "sha256": "c72b874365aa7bb95d8789986a0fe42254f3cf3ad9fc83018627012291996d7f"
+    "sha256": "56a1f00bc5d7c7f294493d81802f444a03e0770a8d58254be263f71f13d456ec"
   },
   "saveOutsideShares": {
     "file": "memory.mjs",
@@ -765,7 +765,7 @@
   },
   "sendMessagesV2": {
     "file": "delivery.mjs",
-    "sha256": "2ec21e95b95061b4c0378acee8bdccb24b67980479db126d03f25d36a2df79ea"
+    "sha256": "3d21d4245f3af6dbdd85b65a9a5440cdfe0228bc0b63fb8526720aaf4121fbe6"
   },
   "shouldAuditKey": {
     "file": "delivery.mjs",
@@ -841,7 +841,7 @@
   },
   "handleOwnerGroupCommand": {
     "file": "groups.mjs",
-    "sha256": "b69965d8f9162a379dafd1a83a58ea96a11f0da61b433e1c69ee64d8923b898c"
+    "sha256": "693d67f155ec2829378750d64e7640029cb545495a4d36bb72e3ad1947349d41"
   },
   "guestRateOk": {
     "file": "groups.mjs",
@@ -849,11 +849,11 @@
   },
   "isGuestGroupCalled": {
     "file": "groups.mjs",
-    "sha256": "9d1ca6661ee8c52385acb8a0b2d34fc65836c4d6be29afa7f82b54348e164dc2"
+    "sha256": "24a8bc8fe346c105a70803d79dd2d954eaf98a53d8866c7dee26abfe95bdc228"
   },
   "canReplayGroupMessage": {
     "file": "groups.mjs",
-    "sha256": "4b547aa9faf99d3b8b058495d0669370f9c032d3d504caa8edf62f50dd38dadc"
+    "sha256": "d84f6731c69ac638a83511f7b5a24e6e63c446c0ab02af99b8ca48ee14fcfb74"
   },
   "syncGroupMembership": {
     "file": "groups.mjs",
@@ -941,7 +941,7 @@
   },
   "safeResetSession": {
     "file": "sessions.mjs",
-    "sha256": "a0c45ff9b73099ed035cf39c6fec4fd4a49b0e6bf6344e4dd8c7451a2556cb2c"
+    "sha256": "b8ff19865a3c17b556d57d7c57c552093cf543c549ade9bf2ad5cd3dec37331c"
   },
   "retryHandoffArchives": {
     "file": "sessions.mjs",
@@ -1069,7 +1069,7 @@
   },
   "isDirectAddress": {
     "file": "social-v1.mjs",
-    "sha256": "1e1a8ca6d5b04577204738249e7a5bf0100e78d38b39b1a701f768dcba9f1369"
+    "sha256": "0f03c43e9fb5fe82358fd8ac2ea89a04cf62845c1e9e29be7fb478be32e8e474"
   },
   "isDirectedAtAi": {
     "file": "social-v1.mjs",
@@ -1093,7 +1093,7 @@
   },
   "enterActive": {
     "file": "social-v1.mjs",
-    "sha256": "ad65787b567d50c59ec06d00e4fd1cf110b2e08d0bcae83179dfab37a1120771"
+    "sha256": "c2c1c84785236bace98c673eddc48275a28e2a169bc0383faa697ea2ab9cdea8"
   },
   "cancelSocialTimers": {
     "file": "social-v1.mjs",
@@ -1133,7 +1133,7 @@
   },
   "deliverPromptNow": {
     "file": "social-v1.mjs",
-    "sha256": "41a94abad132648d7af483b944353bf26bd181accad6bdf48ca43129837e06ee"
+    "sha256": "784e9208029000a2a515547645d467bff5b6f2337f7cc74e8b47e35e420dd3dd"
   },
   "deliverPrompt": {
     "file": "social-v1.mjs",
@@ -1145,11 +1145,11 @@
   },
   "scheduleSocialReply": {
     "file": "social-v1.mjs",
-    "sha256": "a27b715de63961bbce4e7b1ac5bbb3a62ba66a77002667f20f42b5909be5d189"
+    "sha256": "d61b10fb49abbe80918e04b6deec4a57b9af326d57127d76b70202b9a82c70c6"
   },
   "socialLoopTick": {
     "file": "social-v1.mjs",
-    "sha256": "23573264fb88857b4dbb8f088a34a4642632ba728713820675063cee37ce5166"
+    "sha256": "08575b87c911eeefe0d92900a77824f00e9c59bcfd5765b27c30bfca653fb177"
   },
   "startSocialLoop": {
     "file": "social-v1.mjs",
@@ -1217,7 +1217,7 @@
   },
   "evaluateWakeTriggerV2": {
     "file": "social-wake-v2.mjs",
-    "sha256": "20925c9578cf0538e40252aa395e419ce0c35183f736fa2a9d0f0f4bf7ac615e"
+    "sha256": "111455a15d9a84f7d766179ca442a44ef75981a02fcbe98f280a56ff4a934d7a"
   },
   "readThroughSeqV2": {
     "file": "social-wake-v2.mjs",
@@ -1245,19 +1245,19 @@
   },
   "selfIdentityTextV2": {
     "file": "social-wake-v2.mjs",
-    "sha256": "bd5a7a8e964add3cf895217c3ad00e31fcb1c521735a92364d6137dc57e8b94b"
+    "sha256": "2d70ea45fe86ae81412dcd4af5c51e3364c251264ef5fd479f159d909d1be238"
   },
   "buildWakePromptV2": {
     "file": "social-wake-v2.mjs",
-    "sha256": "ba25d09a775883cb7f43dfe437f13bc5dd8dd8c2c3ff6198f428ff4550e0957d"
+    "sha256": "0cb78a9a3a8a5051ea8997d1f500d6e0f5c46ae62a09ad18c472467fd27a6414"
   },
   "buildWakeReminderPromptV2": {
     "file": "social-wake-v2.mjs",
-    "sha256": "d9581f82784272f1f70de5cb6e80402ae249c3ec4e90c58971705aa2d5f64ac1"
+    "sha256": "5e7ce6718688e4d7cdd4988e11a2754bf832706d38c4c0709968df90ca901d2a"
   },
   "sendWakePromptV2": {
     "file": "social-wake-v2.mjs",
-    "sha256": "8f03591db6e1865271d5791bf8ef9508f419c90250325adb0a676e2bfbd88efa"
+    "sha256": "b7ef462a0780646058f05457f7fc995fd282b3f30b938da302c4ed955285dfd9"
   },
   "cancelReplyCheckV2": {
     "file": "social-wake-v2.mjs",
@@ -1265,7 +1265,7 @@
   },
   "scheduleReplyCheckV2": {
     "file": "social-wake-v2.mjs",
-    "sha256": "8f4afcc513a34b814a18ec5d338239e2cbf6ef489ed4df2b1c52613fe5f852ff"
+    "sha256": "ef74f39a3bdb5d4335f9df00f391dc55083a903f3884fcb0867fc5f49237bac8"
   },
   "busyReasonV2": {
     "file": "social-wake-v2.mjs",
@@ -1285,15 +1285,15 @@
   },
   "scheduleWakeV2": {
     "file": "social-wake-v2.mjs",
-    "sha256": "0bd4c22d3ca0256d4117150145a0950a6ca74d705b46af25dfcf6de207ae9724"
+    "sha256": "a9560ce062c5801d58cf89a4bd071809ed1330f37044f8e809436682002abdae"
   },
   "replayPendingWakeReasonsV2": {
     "file": "social-wake-v2.mjs",
-    "sha256": "3be89c287f7f73db67a222dea69e9b30d682e10f3391a7c4ece25791762ac8e2"
+    "sha256": "0a8d477047501fd59e28e004ffe41b5801ab553e8f4960ae59f51eb6cbc1507a"
   },
   "setupSleepTimerV2": {
     "file": "social-wake-v2.mjs",
-    "sha256": "5598a31faa13b636046376589c71de541bf026cc4f0661001d86d9581ee981e6"
+    "sha256": "7f68079c01e0c9fabed039e81324fb41f07292689dee05750c6de6a6cb70694a"
   },
   "cancelProactiveCheckV2": {
     "file": "social-wake-v2.mjs",
@@ -1301,11 +1301,11 @@
   },
   "scheduleProactiveCheckV2": {
     "file": "social-wake-v2.mjs",
-    "sha256": "0879214bb38ca1622e4095b4c8b3bb8095b27f54066964c9c5117df8bc8be6af"
+    "sha256": "7a59ac9c0af5d545e02e012b3cbd6d239a489c08a964b3f0e834b2b0c9d0b18d"
   },
   "clearSocialV2Timers": {
     "file": "social-wake-v2.mjs",
-    "sha256": "0a465e46b839d75f2d583713bdc46c527c92d2477ffbbd31b426e60a7aae787d"
+    "sha256": "a641ee95508669d53aed443c49685c1a0ae553b24e481189fbb9ef1638756ec9"
   },
   "clearAllSocialV2Timers": {
     "file": "social-wake-v2.mjs",
@@ -1321,7 +1321,7 @@
   },
   "handleIncoming": {
     "file": "incoming.mjs",
-    "sha256": "28b542d953ddc11c3719ea6f0a4f914c7cb91fcc2331966bf04dd3fba34d91d1"
+    "sha256": "20ac90f7a65db272df7b548617f3d6c7d0fffe034a60ccc0fd3624c8d1b769a0"
   },
   "cancelPendingEntry": {
     "file": "approvals.mjs",
@@ -1333,7 +1333,7 @@
   },
   "handlePokeNotice": {
     "file": "approvals.mjs",
-    "sha256": "afdc267d1cc801cbd5fd69471f0222e05dc2cd829c925b0fa5a1dd4f15d14060"
+    "sha256": "98349d30366c679c408ec0782545e5d31990f0f9c266c7bea34e8877e022b3fe"
   },
   "registerPending": {
     "file": "approvals.mjs",
@@ -1345,6 +1345,54 @@
   },
   "pumpMux": {
     "file": "events.mjs",
-    "sha256": "ead5e3ad8d7d3788de819eb2349183152da3c379bd94f4e80c640991d433acd5"
+    "sha256": "ccbbbecc7300c274187bbfaeb7493128ead4ae5f24a7f4c9e2df0de0a22c8b48"
+  },
+  "groupFollowupTargetAllowed": {
+    "file": "console-server.mjs",
+    "sha256": "a9f9b5613e05154794d346fb960cd2437273b6689e430d5c11cb0474b01c3fc8"
+  },
+  "groupFollowupSendGuard": {
+    "file": "console-server.mjs",
+    "sha256": "0714604cc71886b8019b3c55bfc3ff13daf49b999347362b0004abb285b52171"
+  },
+  "hasCqPayload": {
+    "file": "console-server.mjs",
+    "sha256": "f7135f18d6eca7e1eac96517854046e15ba6e4a287905f0b49760c0d592431d6"
+  },
+  "activeGroupAttention": {
+    "file": "incoming.mjs",
+    "sha256": "4c1757fc80580dc9817c1fedb1e73a999a51c8b88d4ff8c3857c0de80506a441"
+  },
+  "groupAttentionDuration": {
+    "file": "incoming.mjs",
+    "sha256": "ab8266b62b89b1cdd37c854b63f94b8965ffcb5d3a016e86ace28055255859a3"
+  },
+  "selfMentionProof": {
+    "file": "incoming.mjs",
+    "sha256": "7d492fb4ab73567d3a257886ad031116e021ee11dd76908eb8e886c1ac18bb64"
+  },
+  "hasOnlyGroupFollowupTextSegments": {
+    "file": "incoming.mjs",
+    "sha256": "1dab4a15791cadd44deb37ab43432220b3ff09ac2769e2fe9a61f0ab18ecf57f"
+  },
+  "clearGroupAttention": {
+    "file": "incoming.mjs",
+    "sha256": "5e9e07b2123fe98d448e14d58c5cc7feb34d800af461707475ff557481f70ad1"
+  },
+  "groupFollowupScopeForKey": {
+    "file": "social-v1.mjs",
+    "sha256": "0c6870992346977be27b6d799a656002840573cc67131e861b36b57d7bf12d3f"
+  },
+  "groupFollowupScopeForToken": {
+    "file": "social-v1.mjs",
+    "sha256": "e310e3265902251ded22476b9c8c62d847bd8d7741173afc898c333dcea3f060"
+  },
+  "hasGroupFollowupScope": {
+    "file": "social-v1.mjs",
+    "sha256": "5818bbe05ebd98ed4336ce695082cb8f3e2e56a94fddbe87de1a2b492b15d0ab"
+  },
+  "isGroupFollowupScopeActive": {
+    "file": "social-v1.mjs",
+    "sha256": "7c23698ac46b901d6a51766478557d02e62ecc52f9ce111549e328c724d1a260"
   }
 }

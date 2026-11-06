@@ -100,15 +100,15 @@ await test('#29 唤醒 prompt 必须写明机器人自己的昵称与 QQ 号', a
   const h = await bridgeHarness();
   try {
     h.setSelfIdentity('樰', '10001');
-    const line = h.selfIdentityTextV2();
+    const line = h.selfIdentityTextV2(KEY);
     assert.match(line, /【你的身份】/);
     assert.match(line, /樰/);
     assert.match(line, /10001/);
-    assert.match(line, /@樰/, '必须明确「@昵称」指的是自己');
+    assert.match(line, /真实 at 段指向你本人 QQ 号/, '同名昵称不能代替真实QQ号@');
 
     const prompt = h.buildWakePromptV2(KEY, 'atMention');
     assert.match(prompt, /【你的身份】/, '每次唤醒都要带身份（它是 agent 唯一能对上号的地方）');
-    assert.match(prompt, /@樰/);
+    assert.match(prompt, /昵称可能与群友重名/);
     assert.match(prompt, /10001/);
 
     const reminder = h.buildWakeReminderPromptV2(KEY);

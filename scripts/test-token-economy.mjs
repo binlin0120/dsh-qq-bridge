@@ -9,6 +9,16 @@ const ACTIVE = { mode: 'active' };
 const DIVING = { mode: 'diving', infinite: true, triggers: { atMention: true, anyMessage: false } };
 const plain = (value) => JSON.parse(JSON.stringify(value));
 const seqs = (messages) => Array.from(messages, (message) => message.seq);
+// These transport/cursor regressions require a genuine structured group mention;
+// synthetic question/timer wakes cannot authorize a group reply.
+async function sendMentionWake(h) {
+  const st=h.getSocialV2State(KEY);
+  const event={self_id:999,user_id:789,message_id:'fixture-at-'+st.lastUnreadSeq,message:[{type:'at',data:{qq:'999'}}]};
+  const admission={key:KEY,sourceId:event.message_id,modeEpoch:h.getGroupAdmissionEpoch(),event};
+  assert.equal(h.evaluateWakeTriggerV2(KEY,st,event,'group','','',false,admission),'atMention');
+  await h.sendWakePromptV2(KEY,'atMention');
+}
+
 let failures = 0;
 let tests = 0;
 
@@ -402,12 +412,12 @@ await test('busy and rate-limited wake attempts preserve the current observation
   const checkObservation = () => assert.deepEqual([st.preSleepWaitObservedAt, st.preSleepWaitSatisfiedAt, st.preSleepWaitAccumMs], [123, 456, 789]);
   setObservation();
   h.promptQueues.set(KEY, { running: true, queue: [] });
-  await h.sendWakePromptV2(KEY, 'question');
+  await sendMentionWake(h);
   checkObservation();
   h.promptQueues.delete(KEY);
   h.cfg.socialV2.wake.maxWakePerMinute = 1;
   st.wakeTimes = [Date.now()];
-  await h.sendWakePromptV2(KEY, 'question');
+  await sendMentionWake(h);
   checkObservation();
   assert.equal(h.calls.prompts.length, 0);
 });
@@ -418,7 +428,7 @@ await test('a rejected prompt does not authorize the undelivered snapshot', asyn
     h.calls.prompts.push(params);
     return { result: { ok: false, error: { code: 'FIXTURE_REJECT', message: 'fixture rejection' } } };
   };
-  await h.sendWakePromptV2(KEY, 'question');
+  await sendMentionWake(h);
   assert.equal(h.calls.prompts.length, 1);
   assert.equal((await request('mark-read', { body: { throughSeq: 1 } })).status, 400);
   assert.deepEqual(seqs(st.unread), [1]);
@@ -431,7 +441,7 @@ await test('a new arrival during prompt acceptance is not implicitly part of the
     append('arrived after snapshot construction');
     return { result: { ok: true, value: {} } };
   };
-  await h.sendWakePromptV2(KEY, 'question');
+  await sendMentionWake(h);
   assert.equal((await request('mark-read', { body: { throughSeq: 2 } })).status, 400);
   assert.equal((await request('wake-config', { body: { throughSeq: 1, config: ACTIVE } })).status, 200);
   assert.deepEqual(seqs(st.unread), [2]);
@@ -444,7 +454,7 @@ await test('a retired prompt session cannot grant a receipt when its old accepta
     h.retireSession(KEY);
     return { result: { ok: true, value: {} } };
   };
-  await h.sendWakePromptV2(KEY, 'question');
+  await sendMentionWake(h);
   assert.equal((await request('mark-read', { body: { throughSeq: 1 }, token: st.agentToken })).status, 400);
   assert.deepEqual(seqs(st.unread), [1]);
 });
@@ -454,7 +464,7 @@ await test('offline wake replay builds a fresh snapshot with the current session
   const originalToken = st.agentToken;
   append('queued initial message');
   h.setReady(false);
-  await h.sendWakePromptV2(KEY, 'question');
+  await sendMentionWake(h);
   assert.equal(h.calls.prompts.length, 0);
   assert.equal((await request('mark-read', { body: { throughSeq: 1 } })).status, 400);
   h.retireSession(KEY);
@@ -473,7 +483,7 @@ await test('offline wake replay builds a fresh snapshot with the current session
 await test('offline reserved2 wake replay cannot leak into an ordinary chat session', async ({ h, append }) => {
   append('reserved2 queue message');
   h.setReady(false);
-  await h.sendWakePromptV2(KEY, 'question');
+  await sendMentionWake(h);
   h.setMode('chat');
   h.setReady(true);
   await h.flushQueue();
@@ -485,7 +495,7 @@ await test('real wake delivery inlines compact messages with exact quote and med
     media: [{ kind: 'image', file: 'fixture-local-image', url: 'https://images.invalid/fixture-secret' }],
     forwards: ['fixture-forward-123'],
   });
-  await h.sendWakePromptV2(KEY, 'question');
+  await sendMentionWake(h);
   assert.equal(h.calls.prompts.length, 1);
   const text = h.calls.prompts[0].content.filter((part) => part.type === 'text').map((part) => part.text).join('\n');
   assert.ok(text.includes('fixture-inline-content'));
@@ -524,7 +534,7 @@ await test('offline queued wakes respect pause and disable at dispatch without e
   append('queued while active');
   for (const policy of ['paused', 'disabled']) {
     h.setReady(false);
-    await h.sendWakePromptV2(KEY, 'question');
+    await sendMentionWake(h);
     if (policy === 'paused') h.socialV2.paused = true;
     else h.cfg.socialV2.enabled = false;
     h.setReady(true);

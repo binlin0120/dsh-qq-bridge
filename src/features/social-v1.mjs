@@ -1,6 +1,166 @@
 // social-v1: explicit live dependencies preserve shared state and authority boundaries.
-export const dependencies=["DIRECTION_HINT","QUEUE_MAX","SENSITIVE_RE","SILENT_MARKER","SPACE_SPLIT_HINT","api","auditAndSend","buildWakePromptV2","buildWakeSnapshotV2","canReplayGroupMessage","canonicalV2Key","cfg","clearInterval","clearTimeout","currentMode","currentRoleHint","disarmPendingWakeLease","dshReady","enqueueForRetry","ensureSession","getSocialV2State","isCurrentSession","isSessionAllowedInCurrentMode","log","mdToPlain","mediaHintFor","messageMediaStore","noteModelMessagesV2","pendingWakeKeys","promptQueues","queued","randInt","resolveMediaList","sayBridge","selfNickname","setInterval","setTimeout","shouldAuditKey","social","socialV2","state","truncateText","withSlangContext"];
+import {isExplicitSelfMention} from '../group-mention.mjs';
+export const dependencies=["DIRECTION_HINT","QUEUE_MAX","SENSITIVE_RE","SILENT_MARKER","SPACE_SPLIT_HINT","api","auditAndSend","buildWakePromptV2","buildWakeSnapshotV2","canReplayGroupMessage","canonicalV2Key","cfg","clearInterval","clearTimeout","currentMode","groupAdmissionEpoch","currentRoleHint","disarmPendingWakeLease","dshReady","enqueueForRetry","ensureSession","getSocialV2State","isCurrentSession","isSessionAllowedInCurrentMode","log","mdToPlain","mediaHintFor","messageMediaStore","noteModelMessagesV2","pendingWakeKeys","promptQueues","queued","randInt","resolveMediaList","sayBridge","selfNickname","setInterval","setTimeout","shouldAuditKey","social","socialV2","state","truncateText","withSlangContext"];
 export function createSocialV1(deps){
+  // A missing scope means ordinary authority. Keep a denying tombstone until a
+  // later exact-mention prompt is proven to own a live turn; cleanup must never
+  // promote an in-flight restricted token back to the ordinary tool surface.
+  const groupFollowupScopes = new Map();
+  const pendingGroupTurnScopes = new Map();
+  const activeGroupFollowupTurns = new Map();
+  const liveGroupTurns = new Map();
+  let groupDispatchOrder = 0;
+  const turnScopeId = (sessionId, turn) => `${sessionId}\0${turn}`;
+
+  function groupFollowupScopeForKey(key) {
+    return groupFollowupScopes.get(key) ?? null;
+  }
+
+  function groupFollowupScopeForToken(token) {
+    if (typeof token !== 'string' || !token) return null;
+    for (const scope of groupFollowupScopes.values()) {
+      if (scope.agentToken === token) return scope;
+    }
+    return null;
+  }
+
+  const forgetPendingGroupTurnScope = (scope) => {
+    if (!scope) return;
+    const pending = pendingGroupTurnScopes.get(scope.sessionId) ?? [];
+    const remaining = pending.filter((item) => item !== scope);
+    if (remaining.length) pendingGroupTurnScopes.set(scope.sessionId, remaining);
+    else pendingGroupTurnScopes.delete(scope.sessionId);
+  };
+
+  const revokeGroupTurnScope = (scope, { rejected = false } = {}) => {
+    if (!scope) return;
+    scope.status = 'revoked';
+    if (scope.followup) {
+      const current = groupFollowupScopes.get(scope.key);
+      if (!current || current.order <= scope.order) groupFollowupScopes.set(scope.key, scope);
+    }
+    // Only a definitive refusal proves that this submission cannot own a turn.
+    // A transport exception may have happened after DSH durably accepted it.
+    if (rejected) forgetPendingGroupTurnScope(scope);
+  };
+
+  const clearGroupFollowupScopes = (key) => {
+    for (const scope of groupFollowupScopes.values()) {
+      if (!key || scope.key === key) scope.status = 'revoked';
+    }
+    for (const pending of pendingGroupTurnScopes.values()) {
+      for (const scope of pending) if (!key || scope.key === key) scope.status = 'revoked';
+    }
+    for (const scope of activeGroupFollowupTurns.values()) {
+      if (!key || scope.key === key) scope.status = 'revoked';
+    }
+    // Do not reuse pre-disconnect message receipts after an uncertain boundary.
+    for (const [sessionId, live] of liveGroupTurns) {
+      if (!key || live.key === key) liveGroupTurns.delete(sessionId);
+    }
+  };
+
+  const currentGroupTurnScope = (scope) => scope.mode === deps.currentMode
+    && scope.modeEpoch === deps.groupAdmissionEpoch
+    && scope.bindBefore > Date.now()
+    && deps.isCurrentSession(scope.key, scope.sessionId);
+
+  const bindGroupTurnScope = (scope, turn) => {
+    if (!scope || !turn || scope.turn) return;
+    scope.turn = turn;
+    forgetPendingGroupTurnScope(scope);
+    if (scope.followup) {
+      activeGroupFollowupTurns.set(turnScopeId(scope.sessionId, turn), scope);
+      const valid = scope.status === 'pending' && currentGroupTurnScope(scope)
+        && scope.activeUntil > Date.now();
+      scope.status = valid ? 'active' : 'revoked';
+      const current = groupFollowupScopes.get(scope.key);
+      if (!current || current.order <= scope.order) groupFollowupScopes.set(scope.key, scope);
+      return;
+    }
+    // Full authority needs the RPC receipt of a genuine new @ request, never a
+    // FIFO guess, an accepted HTTP response, or an unrelated turn/start.
+    const current = groupFollowupScopes.get(scope.key);
+    // A matched consumed user message belongs to this live, sequential DSH
+    // turn. Missing end events from older turns cannot keep a new genuine @
+    // request locked forever, but an unrelated start still cannot unlock it.
+    if (scope.status === 'pending-full' && currentGroupTurnScope(scope)
+        && current?.agentToken === scope.agentToken
+        && current.order < scope.order) groupFollowupScopes.delete(scope.key);
+    scope.status = 'full';
+  };
+
+  const reconcileGroupTurnReceipt = (scope) => {
+    if (!scope?.rpcId) return;
+    const live = liveGroupTurns.get(scope.sessionId);
+    if (live?.rpcIds.has(scope.rpcId)) bindGroupTurnScope(scope, live.turn);
+  };
+
+  // HTTP admission and the live stream race independently. This only suppresses
+  // ordinary wake bookkeeping; an unknown RPC never grants tool authority.
+  // Read it before groupFollowupTurnEvent consumes the exact live end.
+  const groupFollowupTurnMayBePending = (sessionId, event) => {
+    if (event?.type !== 'turn/end') return false;
+    const turn = String(event.data?.turn ?? '');
+    const live = liveGroupTurns.get(sessionId);
+    return !!turn && live?.turn === turn && live.rpcIds.size > 0
+      && (pendingGroupTurnScopes.get(sessionId) ?? []).some((scope) =>
+        scope.followup && !scope.responseReceived && !scope.turn);
+  };
+
+  const groupFollowupTurnEvent = (sessionId, event) => {
+    if (event?.type === 'turn/start') {
+      const turn = String(event.data?.turn ?? '');
+      if (!turn) return null;
+      const pending = pendingGroupTurnScopes.get(sessionId) ?? [];
+      const key = pending[0]?.key ?? [...groupFollowupScopes.values()]
+        .find((scope) => scope.sessionId === sessionId)?.key;
+      liveGroupTurns.set(sessionId, { turn, key, rpcIds: new Set() });
+      for (const scope of groupFollowupScopes.values()) {
+        if (scope.sessionId === sessionId && scope.turn !== turn && scope.status === 'active') scope.status = 'revoked';
+      }
+      // Old fixture/DSH responses without rpcId can only gain the restrictive
+      // chat scope. They can never clear a tombstone or grant full authority.
+      const legacy = pending.find((scope) => scope.followup && scope.responseReceived && !scope.rpcId && !scope.turn);
+      if (legacy) bindGroupTurnScope(legacy, turn);
+    } else if (event?.type === 'user/message') {
+      const live = liveGroupTurns.get(sessionId);
+      const source = event.data?.source ?? event.data?.message?.source;
+      const rpcId = source?.kind === 'user' ? source.rpcId : null;
+      if (!live || typeof rpcId !== 'string' || !rpcId) return null;
+      if (event.data?.turn != null && String(event.data.turn) !== live.turn) return null;
+      live.rpcIds.add(rpcId);
+      for (const scope of [...(pendingGroupTurnScopes.get(sessionId) ?? [])]) {
+        if (scope.rpcId === rpcId) bindGroupTurnScope(scope, live.turn);
+      }
+    } else if (event?.type === 'turn/end') {
+      const turn = String(event.data?.turn ?? '');
+      if (!turn) return null;
+      const id = turnScopeId(sessionId, turn);
+      const scope = activeGroupFollowupTurns.get(id) ?? null;
+      if (scope) {
+        activeGroupFollowupTurns.delete(id);
+        revokeGroupTurnScope(scope);
+      }
+      if (liveGroupTurns.get(sessionId)?.turn === turn) liveGroupTurns.delete(sessionId);
+      return scope;
+    }
+    return null;
+  };
+
+  function hasGroupFollowupScope() {
+    return groupFollowupScopes.size > 0;
+  }
+
+  function isGroupFollowupScopeActive(scope) {
+    return !!scope
+      && scope.status === 'active'
+      && groupFollowupScopes.get(scope.key) === scope
+      && scope.activeUntil > Date.now()
+      && scope.mode === deps.currentMode
+      && scope.modeEpoch === deps.groupAdmissionEpoch
+      && deps.isCurrentSession(scope.key, scope.sessionId);
+  }
 function isSocialEnabled() {
     return deps.currentMode === 'reserved' && deps.cfg.social?.enabled !== false;
   }
@@ -15,15 +175,7 @@ function socialState(key) {
 // 启动阶段的"明确与 AI 有关"：@ / 提到名字 / 必回关键词 / 管理员私聊
   function isDirectAddress(textContent, event, kind) {
     if (kind !== 'group') return true;
-    const lower = String(textContent ?? '').toLowerCase();
-    const selfId = String(event?.self_id ?? '');
-    if (selfId && lower.includes('@' + selfId)) return true;
-    if (deps.selfNickname && (lower.includes('@' + deps.selfNickname) || lower.includes(deps.selfNickname))) return true;
-    for (const kw of (deps.cfg.social?.mustReplyKeywords ?? [])) {
-      if (lower.includes(String(kw).toLowerCase())) return true;
-    }
-    if (isDirectedAtAi(textContent)) return true;
-    return false;
+    return isExplicitSelfMention(event);
   }
 
 // 是否"直接针对 AI"的提问/挑战：提到 AI 相关词且带疑问/比较，或对"你"开火，或追问催促
@@ -99,8 +251,8 @@ function buildContextBlock(key) {
     // 从进入活跃那一刻起，随机一个“最长活跃持续时间”；到点后主动收尾退场（当前仅群聊启用）
     if (key.startsWith('group:') && deps.cfg.social?.activeDurationEnabled !== false) {
       st.activeDeadlineAt = now + deps.randInt(
-        Number(deps.cfg.social?.activeDurationMinMs ?? 15 * 60 * 1000),
-        Number(deps.cfg.social?.activeDurationMaxMs ?? 30 * 60 * 1000)
+        Number(deps.cfg.social?.activeDurationMinMs ?? 3 * 60 * 1000),
+        Number(deps.cfg.social?.activeDurationMaxMs ?? 3 * 60 * 1000)
       );
     } else {
       st.activeDeadlineAt = 0;
@@ -207,6 +359,8 @@ function leaveActive(key) {
 // 实际的 DSH prompt 投递（不再直接对外暴露，统一走 promptQueues 串行队列）。
   async function deliverPromptNow(key, promptText, opts = {}) {
     if(opts.recoveryAttempt&&!deps.canReplayGroupMessage(key,opts.groupAdmission))return {ok:true,skipped:true};
+    const groupAdmissionCurrent = () => !opts.groupAdmission || deps.canReplayGroupMessage(key, opts.groupAdmission);
+    if (!groupAdmissionCurrent()) return { ok: true, skipped: true };
     if (!deps.isSessionAllowedInCurrentMode(key)) throw new Error(`当前模式不允许会话 ${key}`);
     // Recheck queued wakes at dispatch time: no model call while paused/disabled
     // and no reserved2 prompt leaking into an ordinary chat after a mode switch.
@@ -237,6 +391,7 @@ function leaveActive(key) {
       }
       throw error;
     }
+    if (!groupAdmissionCurrent()) return { ok: true, skipped: true };
     let wakeState;
     let wakeToken;
     let wakeSnapshot;
@@ -246,10 +401,15 @@ function leaveActive(key) {
       // offline queue may have received more messages since this wake was queued.
       wakeState = deps.getSocialV2State(key);
       wakeToken = wakeState.agentToken;
-      promptText = deps.buildWakePromptV2(key, opts.wakeReason);
+      const promptReason = opts.groupAdmission?.followup === true ? 'groupFollowup'
+        : (opts.groupAdmission?.bootstrap ? 'bootstrap' : opts.wakeReason);
+      promptText = deps.buildWakePromptV2(key, promptReason);
       wakeSnapshot = deps.buildWakeSnapshotV2(key);
       if (wakeSnapshot) {
-        promptText += `\n\n【本次消息快照】\n${JSON.stringify(wakeSnapshot)}\n以上消息已提供，无需重复查询；partial=true 时用 qq_get_unread_messages(afterSeq=readThroughSeq) 继续读取。先处理当前消息；回复前如需确认后续补充，用 qq_wait_for_messages(purpose="reply") 补足短静默，已安静够久会立即返回，不要先长等。收尾只确认你已处理的 readThroughSeq（本地 seq，非 QQ messageId），传给 qq_mark_read 或 qq_set_wake_config 的 throughSeq；新到消息留待处理。`;
+        const snapshotGuidance = opts.groupAdmission?.followup === true
+          ? '以上消息已提供，无需重复查询；partial=true 时只用 qq_get_unread_messages(afterSeq=readThroughSeq) 读取本群剩余未读。先判断是否延续已唤醒话题；相关时只在当前群发送单条纯文本回复，不相关时安静收尾。只将已处理的 readThroughSeq（本地 seq，非 QQ messageId）作为 qq_mark_read 的 throughSeq；新到消息留待处理。不要等待、设置唤醒、执行任务或调用其他工具。'
+          : '以上消息已提供，无需重复查询；partial=true 时用 qq_get_unread_messages(afterSeq=readThroughSeq) 继续读取。先处理当前消息；回复前如需确认后续补充，用 qq_wait_for_messages(purpose="reply") 补足短静默，已安静够久会立即返回，不要先长等。收尾只确认你已处理的 readThroughSeq（本地 seq，非 QQ messageId），传给 qq_mark_read 或 qq_set_wake_config 的 throughSeq；新到消息留待处理。';
+        promptText += `\n\n【本次消息快照】\n${JSON.stringify(wakeSnapshot)}\n${snapshotGuidance}`;
       }
     }
     let content = [{ type: 'text', text: deps.withSlangContext(promptText,key) }];
@@ -258,21 +418,51 @@ function leaveActive(key) {
       content = [{ type: 'text', text: deps.withSlangContext(promptText,key) }, ...imageParts];
     }
     // 媒体解析成功后再标记退场，避免解析异常时残留退场标记。
+    if (!groupAdmissionCurrent()) return { ok: true, skipped: true };
     if (!deps.isCurrentSession(key, sessionId)) throw new Error('投递前会话已重置或权限已变化');
     if (opts.farewell) deps.social.exitingSessions.add(sessionId);
     let accepted;
+    const groupTurnScope = key.startsWith('group:') && opts.groupAdmission && wakeToken ? {
+      key,
+      sessionId,
+      followup: opts.groupAdmission.followup === true,
+      activeUntil: Number(opts.groupAdmission.activeUntil),
+      mode: deps.currentMode,
+      modeEpoch: opts.groupAdmission.modeEpoch,
+      agentToken: wakeToken,
+      bindBefore: Date.now() + 120000,
+      order: ++groupDispatchOrder,
+      status: opts.groupAdmission.followup === true ? 'pending' : 'pending-full',
+      rpcId: null,
+      responseReceived: false,
+    } : null;
+    if (!groupAdmissionCurrent()) return { ok: true, skipped: true };
+    if (groupTurnScope) {
+      const pending = pendingGroupTurnScopes.get(sessionId) ?? [];
+      pending.push(groupTurnScope);
+      pendingGroupTurnScopes.set(sessionId, pending);
+      if (groupTurnScope.followup) groupFollowupScopes.set(key, groupTurnScope);
+    }
     try {
       accepted = await deps.api.sessions.prompt({ sessionId, mode: 'queue', content });
     } catch (error) {
+      revokeGroupTurnScope(groupTurnScope);
       if (opts.farewell) deps.social.exitingSessions.delete(sessionId);
       throw error;
     }
     if (!accepted.result.ok) {
+      revokeGroupTurnScope(groupTurnScope, { rejected: true });
       if (opts.farewell) deps.social.exitingSessions.delete(sessionId);
       const errText = `${accepted.result.error.code}: ${accepted.result.error.message}`;
       const safeErrText = deps.shouldAuditKey(key) && deps.SENSITIVE_RE.test(errText) ? '（含敏感信息，已隐藏）' : errText;
       if (!opts.silent) await deps.sayBridge(key, `⚠️ 消息未被接受：${safeErrText}`);
       return { ok: false, error: safeErrText };
+    }
+    if (groupTurnScope) {
+      groupTurnScope.responseReceived = true;
+      groupTurnScope.rpcId = typeof accepted.rpcId === 'string' && accepted.rpcId ? accepted.rpcId : null;
+      if (accepted.result.value.command) revokeGroupTurnScope(groupTurnScope, { rejected: true });
+      else reconcileGroupTurnReceipt(groupTurnScope);
     }
     if (wakeSnapshot && deps.isCurrentSession(key, sessionId)
         && deps.socialV2.conversations.get(deps.canonicalV2Key(key)) === wakeState
@@ -328,6 +518,7 @@ async function processPromptQueue(key) {
   }
 
 function scheduleSocialReply(key, promptText, minDelay, maxDelay, label, farewell = false, media = null) {
+    if (key.startsWith('group:')) return;
     const delay = deps.randInt(minDelay, maxDelay);
     deps.log(`社交模式：${label} ${key}，延迟 ${Math.round(delay / 1000)}s 后投递`);
     const timer = deps.setTimeout(() => {
@@ -350,6 +541,7 @@ function scheduleSocialReply(key, promptText, minDelay, maxDelay, label, farewel
     // 所有"发过消息或已有状态"的群都参与状态机（观望中的群也做主动判定）
     const keys = new Set([...deps.social.states.keys(), ...deps.social.recentMessages.keys()]);
     for (const key of keys) {
+      if (key.startsWith('group:')) { cancelSocialTimers(key); continue; }
       const st = socialState(key);
       if (st.phase === 'idle') {
         // ── 观望阶段：第三种触发（主动开话题，仅群聊生效） ─────────────────
@@ -509,5 +701,5 @@ async function flushSummaries(key = null) {
       if (deps.social.pendingSummaries.get(k)?.items?.length === 0) deps.social.pendingSummaries.delete(k);
     }
   }
-return {isSocialEnabled,socialState,isDirectAddress,isDirectedAtAi,isMustReplyText,appendRecentMessage,appendSummary,buildContextBlock,enterActive,cancelSocialTimers,cancelAllSocialTimers,cleanupSocialForModeChange,leaveActive,buildBatchPrompt,buildProbePrompt,buildActiveExitPrompt,triggerActiveDurationExit,buildProactivePrompt,deliverPromptNow,deliverPrompt,processPromptQueue,scheduleSocialReply,socialLoopTick,startSocialLoop,flushSummaries};
+return {isSocialEnabled,socialState,isDirectAddress,isDirectedAtAi,isMustReplyText,appendRecentMessage,appendSummary,buildContextBlock,enterActive,cancelSocialTimers,cancelAllSocialTimers,cleanupSocialForModeChange,leaveActive,buildBatchPrompt,buildProbePrompt,buildActiveExitPrompt,triggerActiveDurationExit,buildProactivePrompt,deliverPromptNow,deliverPrompt,processPromptQueue,scheduleSocialReply,socialLoopTick,startSocialLoop,flushSummaries,groupFollowupScopeForKey,groupFollowupScopeForToken,hasGroupFollowupScope,isGroupFollowupScopeActive,groupFollowupTurnEvent,groupFollowupTurnMayBePending,clearGroupFollowupScopes};
 }

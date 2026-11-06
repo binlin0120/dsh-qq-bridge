@@ -811,8 +811,8 @@ function loadConfig() {
       activeReplyDelayMaxMs: 8 * 1000,
       // 活跃超时主动退出（防止活跃群中一直保持活跃）
       activeDurationEnabled: true,     // 总开关：是否启用“活跃超过时长后主动收尾退场”
-      activeDurationMinMs: 15 * 60 * 1000, // 活跃状态最长持续时间下限（进入活跃那一刻起算，分钟）
-      activeDurationMaxMs: 30 * 60 * 1000, // 活跃状态最长持续时间上限（分钟）
+      activeDurationMinMs: 3 * 60 * 1000, // 活跃状态最长持续时间下限（进入活跃那一刻起算，分钟）
+      activeDurationMaxMs: 3 * 60 * 1000, // 活跃状态最长持续时间上限（分钟）
       // 冷场处理
       idleWindowMs: 6 * 60 * 1000,    // 活跃期多久没人说话算冷场
       idleRetryProbability: 0.25,     // 冷场时 AI 继续说一句（试探群友意愿）的概率
@@ -1466,6 +1466,7 @@ let stateDirHardened = null;
 
 // ── 主流程 ──────────────────────────────────────────────────────────────────
 async function main() {
+  let clearGroupFollowupScopes = () => {};
   const {publishSocial}=createSocialPublishing({
     get SENSITIVE_RE(){return SENSITIVE_RE;},
     get chatArchive(){return chatArchive;},
@@ -1764,6 +1765,7 @@ async function main() {
     get cancelSocialTimers(){return cancelSocialTimers;},
     get cfg(){return cfg;},
     get clearSocialV2Timers(){return clearSocialV2Timers;},
+    get clearGroupFollowupScopes(){return clearGroupFollowupScopes;},
     get clearTimeout(){return clearTimeout;},
     get closedAgentPreset(){return closedAgentPreset;} ,set closedAgentPreset(value){closedAgentPreset=value;},
     get collectors(){return collectors;},
@@ -1809,6 +1811,7 @@ async function main() {
     get withTimeout(){return withTimeout;}
   });
   const {startConsoleServer}=createConsoleServer({
+    get invalidateGroupAdmissions(){return ()=>{groupAdmissionEpoch+=1;clearGroupAttention();clearGroupFollowupScopes();};},
     get qqRequestService(){return qqRequestService;},
     get ACTIVE_WAIT_LEASE_MS(){return ACTIVE_WAIT_LEASE_MS;},
     get ACTIVITY_LOG(){return ACTIVITY_LOG;},
@@ -1914,6 +1917,10 @@ async function main() {
     get getImageDimensions(){return getImageDimensions;},
     get getSocialV2State(){return getSocialV2State;},
     get getStickerImageData(){return getStickerImageData;},
+    get groupFollowupScopeForKey(){return groupFollowupScopeForKey;},
+    get groupFollowupScopeForToken(){return groupFollowupScopeForToken;},
+    get hasGroupFollowupScope(){return hasGroupFollowupScope;},
+    get isGroupFollowupScopeActive(){return isGroupFollowupScopeActive;},
     get groupAuthority(){return groupAuthority;},
     get groupPolicies(){return groupPolicies;},
     get hardenStateDirAcl(){return hardenStateDirAcl;},
@@ -2455,6 +2462,7 @@ async function main() {
     get caps(){return caps;},
     get cfg(){return cfg;},
     get currentMode(){return currentMode;},
+    get groupAdmissionEpoch(){return groupAdmissionEpoch;},
     get extractMediaFromSegments(){return extractMediaFromSegments;},
     get fetchOneBotImage(){return fetchOneBotImage;},
     get fs(){return fs;},
@@ -2558,6 +2566,7 @@ async function main() {
     get api(){return api;},
     get cfg(){return cfg;},
     get chatTurnRunning(){return chatTurnRunning;},
+    get clearGroupFollowupScopes(){return clearGroupFollowupScopes;},
     get collectors(){return collectors;},
     get crypto(){return crypto;},
     get currentMode(){return currentMode;},
@@ -2642,7 +2651,7 @@ async function main() {
     get truncateText(){return truncateText;},
     get truncateTextTail(){return truncateTextTail;}
   });
-  const {isSocialEnabled,socialState,isDirectAddress,isDirectedAtAi,isMustReplyText,appendRecentMessage,appendSummary,buildContextBlock,enterActive,cancelSocialTimers,cancelAllSocialTimers,cleanupSocialForModeChange,leaveActive,buildBatchPrompt,buildProbePrompt,buildActiveExitPrompt,triggerActiveDurationExit,buildProactivePrompt,deliverPromptNow,deliverPrompt,processPromptQueue,scheduleSocialReply,socialLoopTick,startSocialLoop,flushSummaries}=createSocialV1({
+  const {isSocialEnabled,socialState,isDirectAddress,isDirectedAtAi,isMustReplyText,appendRecentMessage,appendSummary,buildContextBlock,enterActive,cancelSocialTimers,cancelAllSocialTimers,cleanupSocialForModeChange,leaveActive,buildBatchPrompt,buildProbePrompt,buildActiveExitPrompt,triggerActiveDurationExit,buildProactivePrompt,deliverPromptNow,deliverPrompt,processPromptQueue,scheduleSocialReply,socialLoopTick,startSocialLoop,flushSummaries,groupFollowupScopeForKey,groupFollowupScopeForToken,hasGroupFollowupScope,isGroupFollowupScopeActive,groupFollowupTurnEvent,groupFollowupTurnMayBePending,clearGroupFollowupScopes:clearGroupFollowupScopesImpl}=createSocialV1({
     get DIRECTION_HINT(){return DIRECTION_HINT;},
     get QUEUE_MAX(){return QUEUE_MAX;},
     get SENSITIVE_RE(){return SENSITIVE_RE;},
@@ -2658,6 +2667,7 @@ async function main() {
     get clearInterval(){return clearInterval;},
     get clearTimeout(){return clearTimeout;},
     get currentMode(){return currentMode;},
+    get groupAdmissionEpoch(){return groupAdmissionEpoch;},
     get currentRoleHint(){return currentRoleHint;},
     get disarmPendingWakeLease(){return disarmPendingWakeLease;},
     get dshReady(){return dshReady;},
@@ -2687,6 +2697,7 @@ async function main() {
     get truncateText(){return truncateText;},
     get withSlangContext(){return withSlangContext;}
   });
+  clearGroupFollowupScopes = clearGroupFollowupScopesImpl;
   const {roleRawContent,roleHintForMode,currentRoleHint,isCjkLikeChar,convertExampleSpacesToComma,findCjkSpaceWarning,findSplitBoundaryWarning,currentRoleHintV2}=createPersona({
     get GEN1_ROLE_LINE_RE(){return GEN1_ROLE_LINE_RE;},
     get ROLES_DIR(){return ROLES_DIR;},
@@ -2755,7 +2766,7 @@ async function main() {
     get wakeConfigMissCount(){return wakeConfigMissCount;},
     get wakeConfigUpdatedKeys(){return wakeConfigUpdatedKeys;}
   });
-  const {handleIncoming}=createIncoming({
+  const {handleIncoming,clearGroupAttention}=createIncoming({
     get qqRequestService(){return qqRequestService;},
     get captureSendGuard(){return captureSendGuard;},
     get stopIntent(){return stopIntent;},
@@ -2790,6 +2801,7 @@ async function main() {
     get convKey(){return convKey;},
     get crypto(){return crypto;},
     get currentMode(){return currentMode;},
+    get groupAdmissionEpoch(){return groupAdmissionEpoch;},
     get currentRoleHint(){return currentRoleHint;},
     get deliverPrompt(){return deliverPrompt;},
     get dshReady(){return dshReady;},
@@ -2940,6 +2952,7 @@ async function main() {
     get cancelPendingEntry(){return cancelPendingEntry;},
     get cfg(){return cfg;},
     get clearAllPendingWakeLeases(){return clearAllPendingWakeLeases;},
+    get clearGroupFollowupScopes(){return clearGroupFollowupScopes;},
     get clearTimeout(){return clearTimeout;},
     get collectors(){return collectors;},
     get createTurnCollector(){return createTurnCollector;},
@@ -2950,6 +2963,8 @@ async function main() {
     get disarmPendingWakeLease(){return disarmPendingWakeLease;},
     get ensureWakeableV2(){return ensureWakeableV2;},
     get getSocialV2State(){return getSocialV2State;},
+    get groupFollowupTurnEvent(){return groupFollowupTurnEvent;},
+    get groupFollowupTurnMayBePending(){return groupFollowupTurnMayBePending;},
     get guestWhere(){return guestWhere;},
     get handleCompanionActions(){return handleCompanionActions;},
     get handleTaskRequest(){return handleTaskRequest;},
@@ -3207,6 +3222,7 @@ async function main() {
   let snowlumaWatchStarted = false; // SnowLuma 上游健康探测只启动一次（见 startSnowlumaWatch）
   const startupMode=readJsonSafe(path.join(STATE_DIR,'mode.json'),null);
   let currentMode = normalizeModeInput(startupMode?.mode)||'closed-agent'; // chat | closed-agent | reserved（仿真模式，由 DSH settings / state/mode.json 驱动）
+  let groupAdmissionEpoch = 0;
   let lastMode = currentMode;
   // closed-agent 模式使用的 DSH agent preset：留空表示「用 DSH 自己声明的默认 preset」。
   // 旧版本这里硬编码 'router-standard'，但 DSH 0.1.5 已移除该 preset，硬编码会导致
@@ -3328,6 +3344,11 @@ async function main() {
       }
       reconcileSessionPolicies();
       if (!dshReady) {
+        if (currentMode !== lastMode) {
+          groupAdmissionEpoch += 1;
+          clearGroupAttention();
+          clearGroupFollowupScopes();
+        }
         dshReady = true;
         lastMode = currentMode;
         log(`DSH 已就绪（模式: ${currentMode}）`);
@@ -3346,6 +3367,9 @@ async function main() {
         // DSH 恢复后，把离线期间攒下的黑话学习窗口补触发
         for (const key of [...slangWindows.keys()]) maybeQueueSlangExtraction(key);
       } else if (currentMode !== lastMode) {
+        groupAdmissionEpoch += 1;
+        clearGroupAttention();
+        clearGroupFollowupScopes();
         if (lastMode === 'reserved' && currentMode !== 'reserved') {
           cleanupSocialForModeChange();
           log('桥接模式已离开一代仿真模式，清理社交状态');

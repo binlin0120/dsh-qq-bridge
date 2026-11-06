@@ -66,8 +66,8 @@ test('public rules apply on next group turn, stay scoped, and reject private fre
  await h.handleIncoming('group',45678,evt(12345,'发个表情包 fixture-sticker','explicit-sticker'),h.cfg);assert.equal(h.caps.data.deliveries.some(x=>x.type==='sticker'),true);
 }));
 test('Codex/Claude troubleshooting attaches relevant earlier screenshot instead of ignoring it',()=>fixture(async h=>{
- // First image is background, without at; next actual at asks about it.
- const image=evt(23456,'Codex报错','screen',[{type:'image',data:{file:'fixture.png',url:'https://public.invalid/error.png'}}]);image.message=image.message.filter(x=>x.type!=='at');
+ // The screenshot is explicitly addressed to self; the next at asks about that earlier image.
+ const image=evt(23456,'Codex报错','screen',[{type:'image',data:{file:'fixture.png',url:'https://public.invalid/error.png'}}]);
  await h.handleIncoming('group',45678,image,h.cfg);
  await h.handleIncoming('group',45678,evt(23456,'上面的Codex截图怎么解决','question'),h.cfg);
  const prompt=h.calls.prompts.at(-1);assert.equal(prompt.content.some(x=>x.type==='image'),true);assert.match(prompt.content[0].text,/有依据的排查建议/);assert.match(prompt.content[0].text,/先用安全搜索核对OpenAI或Anthropic官方资料/);

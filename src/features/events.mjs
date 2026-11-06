@@ -1,5 +1,5 @@
 // events: explicit live dependencies preserve shared state and authority boundaries.
-export const dependencies=["KNOWN_AGENT_TOKENS","SENSITIVE_RE","SILENT_MARKER","SILENT_TURN_TIMEOUT_MS","activeWaits","api","appendActivity","appendToolLog","armPendingWakeLease","buildWakeReminderPromptV2","cancelPendingEntry","cfg","clearAllPendingWakeLeases","clearTimeout","collectors","createTurnCollector","currentMode","defaultWakeConfigV2","deliverPrompt","deliveryOutbox","disarmPendingWakeLease","ensureWakeableV2","getSocialV2State","guestWhere","handleCompanionActions","handleTaskRequest","isCurrentSession","isGuestKey","isOwnerKey","isScheduledSession","isSendToolName","isSilentMarker","isSocialEnabled","lastSendSucceeded","learnerCollectors","learnerSessions","learnerWaiters","log","markReadCalledKeys","mdToPlain","noteGuestChat","noteGuestDigest","noteModelError","noteModelHealthy","noteOwnerChat","observeOrchestratorFrame","orchestrationTurn","orchestrator","pendingSendToolCalls","pendingWakeKeys","planSocialTimeline","progressBlock","recordSessionSnapshot","recordSessionUsage","registerPending","replayPendingWakeReasonsV2","reverse","sanitizeToolArgs","saveSocialV2State","sayBridge","sendBurstToQQ","sendToQQ","sendToolSucceededSessions","sessionActualModels","setTimeout","shouldAuditKey","shouldBlockSilentReply","slangLearnerSessionId","sleep","social","socialState","splitChatSegments","taskCollectors","taskEvent","taskProgress","taskSessions","toolCallNames","turnActualModels","turnLeaseNoted","turnProgress","v2TurnStartAt","wakeConfigMissCount","wakeConfigUpdatedKeys","withoutProgress"];
+export const dependencies=["KNOWN_AGENT_TOKENS","SENSITIVE_RE","SILENT_MARKER","SILENT_TURN_TIMEOUT_MS","activeWaits","api","appendActivity","appendToolLog","armPendingWakeLease","buildWakeReminderPromptV2","cancelPendingEntry","cfg","clearAllPendingWakeLeases","clearGroupFollowupScopes","clearTimeout","collectors","createTurnCollector","currentMode","defaultWakeConfigV2","deliverPrompt","deliveryOutbox","disarmPendingWakeLease","ensureWakeableV2","getSocialV2State","groupFollowupTurnEvent","groupFollowupTurnMayBePending","guestWhere","handleCompanionActions","handleTaskRequest","isCurrentSession","isGuestKey","isOwnerKey","isScheduledSession","isSendToolName","isSilentMarker","isSocialEnabled","lastSendSucceeded","learnerCollectors","learnerSessions","learnerWaiters","log","markReadCalledKeys","mdToPlain","noteGuestChat","noteGuestDigest","noteModelError","noteModelHealthy","noteOwnerChat","observeOrchestratorFrame","orchestrationTurn","orchestrator","pendingSendToolCalls","pendingWakeKeys","planSocialTimeline","progressBlock","recordSessionSnapshot","recordSessionUsage","registerPending","replayPendingWakeReasonsV2","reverse","sanitizeToolArgs","saveSocialV2State","sayBridge","sendBurstToQQ","sendToQQ","sendToolSucceededSessions","sessionActualModels","setTimeout","shouldAuditKey","shouldBlockSilentReply","slangLearnerSessionId","sleep","social","socialState","splitChatSegments","taskCollectors","taskEvent","taskProgress","taskSessions","toolCallNames","turnActualModels","turnLeaseNoted","turnProgress","v2TurnStartAt","wakeConfigMissCount","wakeConfigUpdatedKeys","withoutProgress"];
 export function createEvents(deps){
 // DSH 事件流 → QQ
 
@@ -61,6 +61,8 @@ async function pumpMux() {
             // Token 记账放在最前面：无论会话是否仍属当前模式/是否学习会话，
             // 花掉的钱都是真的，都必须入账（归属由 resolveKey 决定）。
             deps.recordSessionUsage(frame.sessionId, frame.event);
+            const groupFollowupPendingEnd = deps.groupFollowupTurnMayBePending(frame.sessionId, frame.event);
+            const groupFollowupTurn = deps.groupFollowupTurnEvent(frame.sessionId, frame.event);
             if(deps.taskEvent(frame.sessionId,frame.event))continue;
             const key = deps.reverse.get(frame.sessionId);
             if (!key) {
@@ -174,11 +176,12 @@ async function pumpMux() {
             // collector 生命周期见 trackTurnEvent()：只为 turn/start 建、空壳 turn/end 即清。
             const { ended } = trackTurnEvent(frame.sessionId, frame.event);
             if (ended) {
+              const isGroupFollowup = (!!groupFollowupTurn || groupFollowupPendingEnd) && frame.event.type === 'turn/end';
               // reserved2 无行动兜底：普通唤醒回合若既没发消息、也没 mark_read / set_wake_config，
               // 则累计 noActionCount；达到阈值后自动重置 WakeConfig，避免 AI 卡死。
               const silentQueueNow = deps.social.silentTurns.get(frame.sessionId) ?? [];
               const isSilentTurn = silentQueueNow.length > 0;
-              if (deps.currentMode === 'reserved2' && key && !isSilentTurn) {
+              if (deps.currentMode === 'reserved2' && key && !isSilentTurn && !isGroupFollowup) {
                 const st = deps.getSocialV2State(key);
                 const turnStart = deps.v2TurnStartAt.get(frame.sessionId) ?? 0;
                 const sendToolHit = deps.sendToolSucceededSessions.has(frame.sessionId);
@@ -230,7 +233,11 @@ async function pumpMux() {
               if (deps.pendingWakeKeys.has(key)) {
                 deps.pendingWakeKeys.delete(key);
                 deps.disarmPendingWakeLease(key);
-                if (deps.wakeConfigUpdatedKeys.has(key) || deps.markReadCalledKeys.has(key)) {
+                if (isGroupFollowup) {
+                  deps.wakeConfigUpdatedKeys.delete(key);
+                  deps.markReadCalledKeys.delete(key);
+                  deps.wakeConfigMissCount.delete(key);
+                } else if (deps.wakeConfigUpdatedKeys.has(key) || deps.markReadCalledKeys.has(key)) {
                   deps.ensureWakeableV2(deps.getSocialV2State(key), { key });
                   deps.wakeConfigUpdatedKeys.delete(key);
                   deps.markReadCalledKeys.delete(key);
@@ -517,6 +524,7 @@ async function pumpMux() {
         // WebSocket 正常关闭和异常中断都会走到这里；必须清掉旧 turn 相关状态，
         // 否则重连后旧 collector/标记残留会导致回复重复累加或误判。
         deps.collectors.clear(); // 清除旧 turn collector，避免重连后残留导致重复累加
+        deps.clearGroupFollowupScopes();
         deps.social.silentTurns.clear(); // 清除未消费的摘要静默名额，避免重连后吞掉正常回复
         deps.sendToolSucceededSessions.clear();
         deps.pendingSendToolCalls.clear();

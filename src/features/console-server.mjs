@@ -1,6 +1,35 @@
 // console-server: explicit live dependencies preserve shared state and authority boundaries.
-export const dependencies=["qqRequestService","ACTIVE_WAIT_LEASE_MS","ACTIVITY_LOG","AbortSignal","CONVERSATION_TOKENS","DSH_CONTROL_TIMEOUT_MS","FEEDBACK_FILE","KNOWN_AGENT_TOKENS","MAX_MEDIA_BYTES","MAX_MEDIA_PIXELS","PRESET_BACKUP_DIR","PRESET_NAMES","REASONING_EFFORT_DEFAULT","REASONING_EFFORT_OPTIONS","REMINDER_FILE","ROLE_CONTENT_MAX_BYTES","ROLE_NAME_MAX","ROOT","SENSITIVE_RE","SLANG_STATUS","SOCIAL_V2_FILE","STATE_DIR","TOOL_LOG_FILE","VALID_MODES","acknowledgeMessagesV2","activeWaits","allowSlangSubmit","allowed","api","appendActivity","appendFeedbackEntry","appendMemoryV2","applyModel","applyRoleInjectLimit","applyStickerNoteV2","assertAccessConfig","assertGroupMember","atomicWriteJson","atomicWriteText","backupPresetFile","beijingTime","bot","buildSlangContext","buildStickerContext","buildStickerStrategyHint","canSendNow","cancelAllSocialTimers","cancelPendingEntry","cancelReplyCheckV2","canonicalV2Key","capabilityKeys","caps","captureSendGuard","cfg","chatArchive","chatTurnRunning","cleanupSocialForModeChange","clearAllPendingWakeLeases","clearAllSocialV2Timers","clearTimeout","closedAgentPreset","collectCurrentSticker","collectStickerV2","collectors","companionTick","computeGapsV2","computeWakeSafetyV2","confirmedSlangListV2","console","consolidateFriendMemory","createSlangEntry","crypto","curModelId","currentMode","currentRoleHint","currentRoleHintV2","deliverPrompt","describeAudio","diaryBusy","drainAllPromptQueues","dshReady","ensureSession","ensureWakeableV2","enterActive","escapeCqText","extractPresetPrefix","feedbackTimes","fetch","fetchHistoryLines","fetchMediaData","fetchModelCatalog","findCjkSpaceWarning","findMessageMedia","findSplitBoundaryWarning","flushSummaries","forgetAgentToken","formatForwardResponse","formatMemoryV2","formatParticipationV2","formatStickerList","friendMemoBusy","fs","getImageDimensions","getSocialV2State","getStickerImageData","groupAuthority","groupPolicies","hardenStateDirAcl","http","inQuietHours","initialPromptMaxChars","initialPrompts","initialPromptsWritable","inspectAudio","installedPresetYaml","internalPurposes","invalidateSlangLearnerSession","isOwnerKey","isRegisteredReminder","isSessionAllowedInCurrentMode","isSleepingConfigV2","knownPresetName","lastForcedAgentStickerSync","lastIncomingMsg","lastMode","lastOwnerChatAt","lastSendSucceeded","leaveActive","listAudioFiles","listPresetBackups","loadGuestChat","loadOrCreateConsoleToken","log","looksLikeImageBuffer","looksLikeUnfinished","manualDirCommand","markReadCalledKeys","maybeConsolidateMemory","mediaIntent","mediaJobs","memoryBook","memoryConsolidating","memoryHistory","memoryRevision","memoryStore","mergeEvidence","messageMediaStore","mimeFromBuffer","mimeFromUrl","modeAllowed","modelAppliedSessions","modelCatalogErrorLogged","modelCatalogInFlight","modelGuard","modelSelectionEpoch","modelSwitchBusy","normalizeIdList","normalizeModeInput","normalizeOwnerQQ","normalizeReasoningEffort","normalizeReminder","normalizeSpeakerIdsV2","noteGuestChat","noteModelHealthy","noteModelMessagesV2","noteOutsideShare","noteOwnerChat","noteRelay","oneBotCall","orchestrator","outTarget","ownerChat","ownerMemory","ownerMemoryScope","parseTargetKey","path","pending","pendingSendToolCalls","pendingWakeKeys","pickWakeTriggersV2","preSleepWaitBlockedV2","presetPromptBlockers","presetPromptWarnings","presetSourceYaml","presetStatus","priceTable","probeModel","process","publicGroupPolicy","publicSlangEntry","publishSocial","qqRequests","queueCharacterPhoto","queueSlangTask","queued","queuedHintAt","readActivityTail","readConfigObject","readFeedbackEntries","readJsonSafe","readPresetPromptText","readRoleContent","readRoleState","readThroughSeqV2","readToolLog","recallContext","recallMemory","reconcileSessionPolicies","recordSentMessagesV2","redactKnownTokensOnly","refreshAllDefaultWakeConfigsV2","releaseLock","rememberStructured","reminderKey","reminderLedger","reminderPermits","renderPresetPromptYaml","replyTimingV2","requestSessionReset","requestedReadThroughSeqV2","resolveAudioProcessing","resolveOutboxPath","resolveOwnerGroupTarget","resolveReplyInfo","resolveReplyTargetV2","resolveVoicePathForOperator","resolveVoicePathForV2","reverse","roleCharStats","roleFilePath","roleInjectMaxChars","roleSectionReport","roleSummaries","roleWarnings","rosterRoleOf","rosterSnapshot","rosterUpdate","runSlangExtraction","runSlangResearch","safeFetchBuffer","safeFileName","sanitizeRoleName","saveQqRequests","saveSlangStore","saveSocialV2State","saveState","scheduleProactiveCheckV2","scheduleReplyCheckV2","scrubPrivate","seenForwardIds","selfDisplayName","selfIdentityTextV2","selfUserId","sendCurrentSticker","sendFileTo","sendImageTo","sendMessagesV2","sendStickerV2","sendToQQ","sendToolSucceededSessions","sendVoiceForV2","sendVoiceV2","sendWakePromptV2","sessionEpoch","sessionModels","sessionPromises","setInitialPrompt","setStickerRemarkV2","setTimeout","setupSleepTimerV2","shortChain","shouldBlockSilentReply","slangEntries","slangExtractionCooldowns","slangResearchingIds","slangStoreWritable","slangSubmitTimes","slangWindows","sleep","snowlumaHealthSnapshot","social","socialV2","state","stateDirHardened","stickerEnabled","stickerEntries","stickerStoreWritable","stickerSyncedAt","stopRetiredSessionWork","suggestQuietMsV2","syncGroupMembership","syncStickerLibrary","takeQuota","taskProgress","temporal","text","tokenLedger","toolCallNames","truncateText","turnLeaseNoted","turnProgress","unquoteJsonString","unwrap","v2ToolEnabled","v2TurnStartAt","validateRoleContent","validateRoleName","verifyVoiceMessageSent","voiceBudgetCheck","voiceBudgetCommit","voiceCfg","voiceLibrary","wakeConfigMissCount","wakeConfigUpdatedKeys","weekStartSh","withTimeout","work","writeRoleContent","writeRoleState","writeWeeklyDiary"];
+export const dependencies=["invalidateGroupAdmissions","groupFollowupScopeForKey","groupFollowupScopeForToken","hasGroupFollowupScope","isGroupFollowupScopeActive","qqRequestService","ACTIVE_WAIT_LEASE_MS","ACTIVITY_LOG","AbortSignal","CONVERSATION_TOKENS","DSH_CONTROL_TIMEOUT_MS","FEEDBACK_FILE","KNOWN_AGENT_TOKENS","MAX_MEDIA_BYTES","MAX_MEDIA_PIXELS","PRESET_BACKUP_DIR","PRESET_NAMES","REASONING_EFFORT_DEFAULT","REASONING_EFFORT_OPTIONS","REMINDER_FILE","ROLE_CONTENT_MAX_BYTES","ROLE_NAME_MAX","ROOT","SENSITIVE_RE","SLANG_STATUS","SOCIAL_V2_FILE","STATE_DIR","TOOL_LOG_FILE","VALID_MODES","acknowledgeMessagesV2","activeWaits","allowSlangSubmit","allowed","api","appendActivity","appendFeedbackEntry","appendMemoryV2","applyModel","applyRoleInjectLimit","applyStickerNoteV2","assertAccessConfig","assertGroupMember","atomicWriteJson","atomicWriteText","backupPresetFile","beijingTime","bot","buildSlangContext","buildStickerContext","buildStickerStrategyHint","canSendNow","cancelAllSocialTimers","cancelPendingEntry","cancelReplyCheckV2","canonicalV2Key","capabilityKeys","caps","captureSendGuard","cfg","chatArchive","chatTurnRunning","cleanupSocialForModeChange","clearAllPendingWakeLeases","clearAllSocialV2Timers","clearTimeout","closedAgentPreset","collectCurrentSticker","collectStickerV2","collectors","companionTick","computeGapsV2","computeWakeSafetyV2","confirmedSlangListV2","console","consolidateFriendMemory","createSlangEntry","crypto","curModelId","currentMode","currentRoleHint","currentRoleHintV2","deliverPrompt","describeAudio","diaryBusy","drainAllPromptQueues","dshReady","ensureSession","ensureWakeableV2","enterActive","escapeCqText","extractPresetPrefix","feedbackTimes","fetch","fetchHistoryLines","fetchMediaData","fetchModelCatalog","findCjkSpaceWarning","findMessageMedia","findSplitBoundaryWarning","flushSummaries","forgetAgentToken","formatForwardResponse","formatMemoryV2","formatParticipationV2","formatStickerList","friendMemoBusy","fs","getImageDimensions","getSocialV2State","getStickerImageData","groupAuthority","groupPolicies","hardenStateDirAcl","http","inQuietHours","initialPromptMaxChars","initialPrompts","initialPromptsWritable","inspectAudio","installedPresetYaml","internalPurposes","invalidateSlangLearnerSession","isOwnerKey","isRegisteredReminder","isSessionAllowedInCurrentMode","isSleepingConfigV2","knownPresetName","lastForcedAgentStickerSync","lastIncomingMsg","lastMode","lastOwnerChatAt","lastSendSucceeded","leaveActive","listAudioFiles","listPresetBackups","loadGuestChat","loadOrCreateConsoleToken","log","looksLikeImageBuffer","looksLikeUnfinished","manualDirCommand","markReadCalledKeys","maybeConsolidateMemory","mediaIntent","mediaJobs","memoryBook","memoryConsolidating","memoryHistory","memoryRevision","memoryStore","mergeEvidence","messageMediaStore","mimeFromBuffer","mimeFromUrl","modeAllowed","modelAppliedSessions","modelCatalogErrorLogged","modelCatalogInFlight","modelGuard","modelSelectionEpoch","modelSwitchBusy","normalizeIdList","normalizeModeInput","normalizeOwnerQQ","normalizeReasoningEffort","normalizeReminder","normalizeSpeakerIdsV2","noteGuestChat","noteModelHealthy","noteModelMessagesV2","noteOutsideShare","noteOwnerChat","noteRelay","oneBotCall","orchestrator","outTarget","ownerChat","ownerMemory","ownerMemoryScope","parseTargetKey","path","pending","pendingSendToolCalls","pendingWakeKeys","pickWakeTriggersV2","preSleepWaitBlockedV2","presetPromptBlockers","presetPromptWarnings","presetSourceYaml","presetStatus","priceTable","probeModel","process","publicGroupPolicy","publicSlangEntry","publishSocial","qqRequests","queueCharacterPhoto","queueSlangTask","queued","queuedHintAt","readActivityTail","readConfigObject","readFeedbackEntries","readJsonSafe","readPresetPromptText","readRoleContent","readRoleState","readThroughSeqV2","readToolLog","recallContext","recallMemory","reconcileSessionPolicies","recordSentMessagesV2","redactKnownTokensOnly","refreshAllDefaultWakeConfigsV2","releaseLock","rememberStructured","reminderKey","reminderLedger","reminderPermits","renderPresetPromptYaml","replyTimingV2","requestSessionReset","requestedReadThroughSeqV2","resolveAudioProcessing","resolveOutboxPath","resolveOwnerGroupTarget","resolveReplyInfo","resolveReplyTargetV2","resolveVoicePathForOperator","resolveVoicePathForV2","reverse","roleCharStats","roleFilePath","roleInjectMaxChars","roleSectionReport","roleSummaries","roleWarnings","rosterRoleOf","rosterSnapshot","rosterUpdate","runSlangExtraction","runSlangResearch","safeFetchBuffer","safeFileName","sanitizeRoleName","saveQqRequests","saveSlangStore","saveSocialV2State","saveState","scheduleProactiveCheckV2","scheduleReplyCheckV2","scrubPrivate","seenForwardIds","selfDisplayName","selfIdentityTextV2","selfUserId","sendCurrentSticker","sendFileTo","sendImageTo","sendMessagesV2","sendStickerV2","sendToQQ","sendToolSucceededSessions","sendVoiceForV2","sendVoiceV2","sendWakePromptV2","sessionEpoch","sessionModels","sessionPromises","setInitialPrompt","setStickerRemarkV2","setTimeout","setupSleepTimerV2","shortChain","shouldBlockSilentReply","slangEntries","slangExtractionCooldowns","slangResearchingIds","slangStoreWritable","slangSubmitTimes","slangWindows","sleep","snowlumaHealthSnapshot","social","socialV2","state","stateDirHardened","stickerEnabled","stickerEntries","stickerStoreWritable","stickerSyncedAt","stopRetiredSessionWork","suggestQuietMsV2","syncGroupMembership","syncStickerLibrary","takeQuota","taskProgress","temporal","text","tokenLedger","toolCallNames","truncateText","turnLeaseNoted","turnProgress","unquoteJsonString","unwrap","v2ToolEnabled","v2TurnStartAt","validateRoleContent","validateRoleName","verifyVoiceMessageSent","voiceBudgetCheck","voiceBudgetCommit","voiceCfg","voiceLibrary","wakeConfigMissCount","wakeConfigUpdatedKeys","weekStartSh","withTimeout","work","writeRoleContent","writeRoleState","writeWeeklyDiary"];
 export function createConsoleServer(deps){
+  const groupFollowupReadPaths = new Set([
+    '/api/socialV2/prompt', '/api/socialV2/state', '/api/socialV2/unread',
+    '/api/socialV2/recent', '/api/socialV2/my-recent', '/api/socialV2/message-detail',
+    '/api/socialV2/active-members'
+  ]);
+
+  function groupFollowupTargetAllowed(scope, key, token) {
+    return !!scope
+      && scope.key === key
+      && deps.isGroupFollowupScopeActive(scope)
+      && (scope.agentToken ? scope.agentToken === token : !token)
+      && key.startsWith('group:');
+  }
+
+  function groupFollowupSendGuard(scope, key, token) {
+    if (!scope) return null;
+    return () => {
+      if (!groupFollowupTargetAllowed(scope, key, token)) {
+        const error = new Error('群活跃期续聊权限已结束，消息未发送');
+        error.statusCode = 403;
+        throw error;
+      }
+    };
+  }
+
+  function hasCqPayload(text) {
+    return /\[CQ:/i.test(String(text ?? ''));
+  }
+
 function startConsoleServer() {
     const port = deps.cfg.consolePort ?? 3100;
     // 控制台鉴权：优先用 config.consoleToken，未配置则自动生成并持久化，不再默认无鉴权。
@@ -57,6 +86,10 @@ function startConsoleServer() {
         res.end(JSON.stringify({ ok: false, error: '无效的请求地址' }));
         return;
       }
+      const requestAgentToken = String(req.headers['x-agent-token'] ?? '');
+      const groupFollowupScope = requestAgentToken
+        ? deps.groupFollowupScopeForToken(requestAgentToken)
+        : null;
       const SECURITY_HEADERS = {
         'X-Frame-Options': 'DENY',
         'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
@@ -191,6 +224,10 @@ function startConsoleServer() {
           return;
         }
         if (!hasToken) {
+          if (deps.currentMode === 'reserved2' && deps.hasGroupFollowupScope() && url.pathname !== '/api/status') {
+            sendJson({ ok: false, error: '群活跃期续聊的智能体调用必须携带当前会话令牌' }, 403);
+            return;
+          }
           const tokenlessAgentAllowed = url.pathname === '/api/status'
             || url.pathname.startsWith('/api/send/')
             || url.pathname.startsWith('/api/images/');
@@ -198,6 +235,26 @@ function startConsoleServer() {
             sendJson({ ok: false, error: '未授权：该接口的智能体调用必须携带有效的会话令牌' }, 403);
             return;
           }
+        }
+      }
+      if (groupFollowupScope) {
+        const isStatus = req.method === 'GET' && url.pathname === '/api/status';
+        const isRead = req.method === 'GET' && groupFollowupReadPaths.has(url.pathname);
+        const isScopedPost = req.method === 'POST' && [
+          '/api/send/group', '/api/send/reply',
+          '/api/socialV2/check-send', '/api/socialV2/send-message',
+          '/api/socialV2/mark-read'
+        ].includes(url.pathname);
+        if ((!isStatus && !isRead && !isScopedPost)
+            || !deps.isGroupFollowupScopeActive(groupFollowupScope)) {
+          sendJson({ ok: false, error: '群活跃期续聊只允许读取本群上下文和发送单条纯文本群回复' }, 403);
+          return;
+        }
+        const queryKey = String(url.searchParams.get('key') ?? '').trim();
+        if (groupFollowupScope && ((isRead && queryKey !== groupFollowupScope.key)
+            || (queryKey && queryKey !== groupFollowupScope.key))) {
+          sendJson({ ok: false, error: '群活跃期续聊不能访问其他会话' }, 403);
+          return;
         }
       }
       // CSRF 防护：所有写操作必须是 application/json，且（若带 Origin）必须来自本机页面。
@@ -386,6 +443,7 @@ function startConsoleServer() {
             deps.drainAllPromptQueues('模式切换，已取消排队中的投递');
             deps.log('控制台：模式离开二代仿真模式，清理 reserved2 定时器与排队投递');
           }
+          if (deps.currentMode !== requestedMode) deps.invalidateGroupAdmissions();
           deps.currentMode = requestedMode;
           deps.lastMode = requestedMode;
           deps.reconcileSessionPolicies();
@@ -2004,6 +2062,11 @@ function startConsoleServer() {
           const body = await readBody();
           const key = String(body.key ?? '').trim();
           if (!key) { sendJson({ ok: false, error: 'key 不能为空' }, 400); return; }
+          if (groupFollowupScope && (!groupFollowupTargetAllowed(groupFollowupScope, key, requestAgentToken)
+              || (body.token !== undefined && String(body.token).trim() !== requestAgentToken))) {
+            sendJson({ ok: false, error: '群活跃期续聊只能确认当前群的已读水位' }, 403);
+            return;
+          }
           if (req.headers['x-agent-token'] && !agentTokenOk(key, req.headers['x-agent-token'])) { sendJson({ ok: false, error: 'agent token 无效' }, 403); return; }
           if (req.headers['x-agent-token'] && !v2SessionAllowed(key)) { sendJson({ ok: false, error: '目标不在当前模式允许范围内' }, 403); return; }
           if (req.headers['x-agent-token'] && !deps.v2ToolEnabled('markRead')) { sendJson({ ok: false, error: '工具未启用：qq_mark_read' }, 403); return; }
@@ -2012,6 +2075,22 @@ function startConsoleServer() {
           // （旧 preset 与「没有水位」的收尾调用；见 acknowledgeMessagesV2 的注释与
           // test-token-economy 的 legacy 用例）。当前 preset 会明确要求带上 readThroughSeq 水位。
           const throughSeq = deps.requestedReadThroughSeqV2(st, body, !!req.headers['x-agent-token']);
+          if (groupFollowupScope) {
+            if (!deps.isGroupFollowupScopeActive(groupFollowupScope)
+                || !groupFollowupTargetAllowed(groupFollowupScope, key, requestAgentToken)) {
+              sendJson({ ok: false, error: '群活跃期续聊权限已结束' }, 403);
+              return;
+            }
+            if (!Number.isSafeInteger(throughSeq) || throughSeq < 0) {
+              sendJson({ ok: false, error: '群活跃期续聊必须提供有效的 readThroughSeq 水位' }, 400);
+              return;
+            }
+            const markedCount = deps.acknowledgeMessagesV2(st, throughSeq);
+            st.lastActionAt = Date.now();
+            deps.saveSocialV2State();
+            sendJson({ ok: true, key, markedCount, unreadCount: st.unread.length, readThroughSeq: deps.readThroughSeqV2(st) });
+            return;
+          }
           // 如果当前已经是“潜水”唤醒配置，且最近还有对话/刚被唤醒，不允许用 mark_read 直接回到潜水；
           // 必须先等够沉睡前观察窗口，避免“聊两句又去潜水”。
           if (deps.isSleepingConfigV2(st.wakeConfig) && deps.preSleepWaitBlockedV2(st)) {
@@ -2420,6 +2499,11 @@ function startConsoleServer() {
         if (req.method === 'POST' && url.pathname === '/api/socialV2/send-message') {
           const body = await readBody();
           const key = String(body.key ?? '').trim();
+          if (groupFollowupScope && ((body.token !== undefined && String(body.token).trim() !== requestAgentToken)
+              || !groupFollowupTargetAllowed(groupFollowupScope, key, requestAgentToken))) {
+            sendJson({ ok: false, error: '群活跃期续聊只能使用当前群的会话令牌' }, 403);
+            return;
+          }
           let rawMessages = body.messages;
           if (typeof rawMessages === 'string') {
             const trimmed = rawMessages.trim();
@@ -2471,6 +2555,14 @@ function startConsoleServer() {
           const id = Number(keyMatch[2]);
           if (!Number.isFinite(id) || id <= 0 || !deps.modeAllowed(key, kind, id, deps.cfg, deps.currentMode)) {
             sendJson({ ok: false, error: '目标不在当前模式允许范围内' }, 403);
+            return;
+          }
+          if (groupFollowupScope
+              && (kind !== 'group' || messages.length !== 1
+                || (atUserId != null && String(atUserId).trim() !== '')
+                || hasCqPayload(messages[0])
+                || !groupFollowupTargetAllowed(groupFollowupScope, key, requestAgentToken))) {
+            sendJson({ ok: false, error: '群活跃期续聊只允许在当前群发送单条纯文本回复' }, 403);
             return;
           }
           if (kind === 'private' && atUserId) {
@@ -2535,7 +2627,9 @@ function startConsoleServer() {
             actualReplyToMessageId = resolved.messageId;
           }
           try {
-            const sentMessages = await deps.sendMessagesV2(key, messages, delays, actualReplyToMessageId, atUserId);
+            groupFollowupSendGuard(groupFollowupScope, key, requestAgentToken)?.();
+            const sentMessages = await deps.sendMessagesV2(key, messages, delays, actualReplyToMessageId, atUserId,
+              undefined, groupFollowupSendGuard(groupFollowupScope, key, requestAgentToken));
             deps.recordSentMessagesV2(key, sentMessages);
             st.lastAiReplyAt = now;
             st.lastActionAt = now;
@@ -2562,7 +2656,7 @@ function startConsoleServer() {
             }
             if (st.sendTimes.length > 500) st.sendTimes = st.sendTimes.slice(-500);
             deps.saveSocialV2State();
-            sendJson({ ok: false, error: error?.message ?? String(error) }, 500);
+            sendJson({ ok: false, error: error?.message ?? String(error) }, Number(error?.statusCode) || 500);
           }
           return;
         }
@@ -3430,6 +3524,11 @@ function startConsoleServer() {
           const key = String(body.key ?? '').trim();
           const tool = String(body.tool ?? '').trim();
           const token = String(body.token ?? '').trim();
+          if (groupFollowupScope && (token !== requestAgentToken
+              || !groupFollowupTargetAllowed(groupFollowupScope, key, requestAgentToken))) {
+            sendJson({ ok: false, error: '群活跃期续聊只能检查当前群的回复工具' }, 403);
+            return;
+          }
           if (!key || !tool || !token) {
             sendJson({ ok: false, error: 'key/tool/token 不能为空' }, 400);
             return;
@@ -3446,6 +3545,12 @@ function startConsoleServer() {
           const flag = flagMap[tool];
           if (!flag) {
             sendJson({ ok: false, error: 'tool 必须是 sendGroup/sendPrivate/reply' }, 400);
+            return;
+          }
+          if (groupFollowupScope
+              && (!['sendGroup', 'reply'].includes(tool)
+                || !groupFollowupTargetAllowed(groupFollowupScope, key, token))) {
+            sendJson({ ok: false, error: '群活跃期续聊只允许回复当前群，不能私聊或跨会话发送' }, 403);
             return;
           }
           if (!deps.v2ToolEnabled(flag)) {
@@ -4072,6 +4177,11 @@ function startConsoleServer() {
           const replyToMessageId = body.replyToMessageId;
           const atUserId = body.atUserId ?? null;
           const key = isPrivate ? `private:${targetId}` : `group:${targetId}`;
+          if (groupFollowupScope && (String(token) !== requestAgentToken
+              || !groupFollowupTargetAllowed(groupFollowupScope, key, requestAgentToken))) {
+            sendJson({ ok: false, error: '群活跃期续聊只能使用当前群的会话令牌' }, 403);
+            return;
+          }
           if(deps.orchestrator&&deps.currentMode==='closed-agent'&&!token&&req.headers['x-agent-call']!==undefined){sendJson({ok:false,sent:false,error:'该会话不使用直接发送工具，回复和任务结果由桥接按任务状态投递'},403);return;}
           // 安全边界：发送工具只允许在 closed-agent（管理员私聊）或 reserved2（二代 AI 带会话令牌）下使用；
           // chat/reserved 的自动转发已覆盖正常回复，MCP 发送工具不应成为 prompt injection 的越权出口。
@@ -4118,6 +4228,13 @@ function startConsoleServer() {
             sendJson({ ok: false, error: '目标不在当前模式允许范围内' }, 403);
             return;
           }
+          if (groupFollowupScope
+              && (isPrivate || (atUserId != null && String(atUserId).trim() !== '')
+                || hasCqPayload(message)
+                || !groupFollowupTargetAllowed(groupFollowupScope, key, requestAgentToken))) {
+            sendJson({ ok: false, error: '群活跃期续聊只允许在当前群发送纯文本回复' }, 403);
+            return;
+          }
           if (replyToMessageId !== undefined && replyToMessageId !== null && String(replyToMessageId).trim() !== '' && !/^-?[1-9]\d*$/.test(String(replyToMessageId).trim())) {
             sendJson({ ok: false, error: 'replyToMessageId 必须是非零整数（消息 id 可能为负数）' }, 400);
             return;
@@ -4133,6 +4250,11 @@ function startConsoleServer() {
             }
             quotedInfo = resolved.info;
             actualReplyToMessageId = resolved.messageId;
+          }
+          if (groupFollowupScope && (!deps.isGroupFollowupScopeActive(groupFollowupScope)
+              || !groupFollowupTargetAllowed(groupFollowupScope, key, requestAgentToken))) {
+            sendJson({ ok: false, error: '群活跃期续聊权限已结束，消息未发送' }, 403);
+            return;
           }
           const sendCfg = deps.cfg.socialV2?.send ?? {};
           const maxChars = Math.max(1, Number(sendCfg.maxMessageChars) || 500);
@@ -4160,7 +4282,8 @@ function startConsoleServer() {
             if (st.sendTimes.length > 500) st.sendTimes = st.sendTimes.slice(-500);
             const deliveryId=registered?deps.reminderKey(key,registered.at,registered.eventKey||registered.text):null;if(registered){if(!deps.reminderLedger.claim(deliveryId,{target:key,due:registered.at})){sendJson({ok:false,error:'这条提醒已处理或结果待核实'},409);return;}registered.used=true;registered.status='sending';deps.atomicWriteJson(deps.REMINDER_FILE,deps.reminderPermits);}
             const reminderReceipts=[];
-            let sentMessages;try{sentMessages=await deps.sendMessagesV2(key,[message],[],actualReplyToMessageId,atUserId,reminderReceipts);}catch(e){if(registered){registered.status='uncertain';deps.reminderLedger.finish(deliveryId,'uncertain',{error:String(e.message)});deps.atomicWriteJson(deps.REMINDER_FILE,deps.reminderPermits);}throw e;}
+            let sentMessages;try{sentMessages=await deps.sendMessagesV2(key,[message],[],actualReplyToMessageId,atUserId,reminderReceipts,
+              groupFollowupSendGuard(groupFollowupScope,key,requestAgentToken));}catch(e){if(registered){registered.status='uncertain';deps.reminderLedger.finish(deliveryId,'uncertain',{error:String(e.message)});deps.atomicWriteJson(deps.REMINDER_FILE,deps.reminderPermits);}throw e;}
             if(registered){registered.status=reminderReceipts.length?'sent':'uncertain';registered.doneAt=Date.now();registered.messageIds=reminderReceipts;deps.reminderLedger.finish(deliveryId,registered.status,{messageIds:registered.messageIds});deps.atomicWriteJson(deps.REMINDER_FILE,deps.reminderPermits);}
             deps.recordSentMessagesV2(key, sentMessages);
             st.lastAiReplyAt = now;
@@ -4193,7 +4316,7 @@ function startConsoleServer() {
             }
             if (st.sendTimes.length > 500) st.sendTimes = st.sendTimes.slice(-500);
             deps.saveSocialV2State();
-            sendJson({ ok: false, error: error?.message ?? String(error) }, 500);
+            sendJson({ ok: false, error: error?.message ?? String(error) }, Number(error?.statusCode) || 500);
           }
           return;
         }

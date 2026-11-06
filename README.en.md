@@ -34,8 +34,8 @@ QQ messages ──► SnowLuma (OneBot v11 WS) ──► qq-bridge ──► DSH
 
 ## Features
 
-- Bridges QQ group/private messages to DSH agent sessions.
-- Social simulation mode ("simulated group friend") with idle/active/probing/exiting states.
+- Bridges QQ group/private messages to DSH agent sessions. Only a real OneBot `at` segment for the logged-in account's exact QQ ID can open a new bounded group activity window; duplicate names, quoted replies, text lookalikes, other accounts and `@all` cannot.
+- During that window, unmentioned text messages are evaluated for topic relevance and do not extend it. Group social timers stay silent, while private-chat and authorized task delivery retain their existing behavior.
 - Space-based message splitting for more natural multi-message replies.
 - Whitelist/blacklist access control, fail-closed by default.
 - Sensitive text audit prevents paths/credentials from being sent to QQ.

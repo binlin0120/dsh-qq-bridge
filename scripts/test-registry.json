@@ -109,6 +109,10 @@
       "tier": "integration",
       "reason": "Legacy environment probe; explicitly select after checking service prerequisites."
     },
+    "test-group-self-mention.mjs": {
+      "tier": "features",
+      "reason": "Isolated strict self QQ mentions, same-name accounts, command silence and private-message compatibility; no live transports."
+    },
     "test-group-context.mjs": {
       "tier": "features",
       "reason": "Mock services and isolated temporary state."
@@ -380,6 +384,14 @@
     "test-group-member-photos.mjs": {
       "tier": "features",
       "reason": "Offline member identity, durable per-person cross-group daily quota and owner exemption fixtures."
+    },
+    "test-group-followup-scope.mjs": {
+      "tier": "features",
+      "reason": "Isolated HTTP scope, exact tokens, pending/revoked authority, queue expiry and real mode transitions; no live transports."
+    },
+    "test-group-followup-lifecycle.mjs": {
+      "tier": "features",
+      "reason": "Isolated follow-up turn receipts, expiry, revoked tombstones, disconnect/reset and exact-at authority restoration; no live DSH or QQ."
     }
   }
 }

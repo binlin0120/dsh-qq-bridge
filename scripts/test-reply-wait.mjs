@@ -4,6 +4,30 @@ import http from 'node:http';
 import { test } from 'node:test';
 import { bridgeHarness } from './audit-bridge-harness.mjs';
 
+let mentionSequence = 0;
+
+async function wakeFromSelfMention(h, key, text = '请回答这个问题') {
+  h.setSelfIdentity('鲸鲸', '99999');
+  await h.handleIncoming('group', 456, {
+    message_id: `reply-wait-mention-${++mentionSequence}`,
+    self_id: 99999,
+    group_id: 456,
+    user_id: 789,
+    sender: { nickname: 'fixture-person' },
+    message: [
+      { type: 'at', data: { qq: '99999' } },
+      { type: 'text', data: { text } },
+    ],
+  }, h.cfg);
+  const st = h.getSocialV2State(key);
+  if (st.pendingWakeTimer) {
+    clearTimeout(st.pendingWakeTimer);
+    st.pendingWakeTimer = null;
+    st.pendingWakeReason = null;
+  }
+  await h.sendWakePromptV2(key, 'atMention');
+}
+
 async function fixture(run, cfg = {}) {
   const h = await bridgeHarness({ config: { socialV2: {
     wake: { preSleepWaitEnabled: true, preSleepWaitMs: 300000 },
@@ -52,8 +76,8 @@ async function fixture(run, cfg = {}) {
 
 test('first reply does not wait out timeout when the snapshot message is already quiet', () => fixture(async ({ h, key, st, request, append }) => {
   append('a complete first message');
+  await wakeFromSelfMention(h, key);
   st.lastIncomingAt = Date.now() - 10000; // batching and model reading already consumed the quiet window
-  await h.sendWakePromptV2(key, 'question');
   const started = Date.now();
   const result = await request('wait', { purpose: 'reply', timeoutMs: 1200, quietMs: 100 });
   assert.equal(result.status, 200);
@@ -68,7 +92,7 @@ test('first reply does not wait out timeout when the snapshot message is already
 
 test('reply waits only for the remaining quiet time after model reading', () => fixture(async ({ h, key, st, request, append }) => {
   append('complete message');
-  await h.sendWakePromptV2(key, 'question');
+  await wakeFromSelfMention(h, key);
   st.lastIncomingAt = Date.now() - 600;
   const result = await request('wait', { purpose: 'reply', timeoutMs: 1500, quietMs: 800 });
   assert.equal(result.data.quiet, true);
@@ -76,8 +100,7 @@ test('reply waits only for the remaining quiet time after model reading', () => 
 }));
 
 test('a message between snapshot and wait is returned without duplicate snapshot content', () => fixture(async ({ h, key, st, request, append }) => {
-  append('in snapshot');
-  await h.sendWakePromptV2(key, 'question');
+  await wakeFromSelfMention(h, key, 'in snapshot');
   append('arrived while model was thinking');
   st.lastIncomingAt = Date.now() - 1000;
   const result = await request('wait', { purpose: 'reply', timeoutMs: 1200, quietMs: 100, minNewMessages: 20 });

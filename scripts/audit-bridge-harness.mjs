@@ -53,6 +53,7 @@ import * as stateAcl from '../src/state-acl.mjs';
 import * as reliability from '../src/reliability.mjs';
 import * as capabilities from '../src/capabilities.mjs';
 import * as groupContextLib from '../src/group-context.mjs';
+import * as groupMentionLib from '../src/group-mention.mjs';
 import * as memoryBookLib from '../src/memory-book.mjs';
 import * as roleCard from '../src/role-card.js';
 import { unwrap, createTurnCollector } from '../src/dsh-client.js';
@@ -172,12 +173,12 @@ export async function bridgeHarness({ config = {}, savedState, files = {}, globa
     memoryStore,memoryConsolidator,recallContext,applyMemoryAction,memoryHistory, noteOwnerChat, noteGuestChat, chatArchive, ownerMemory, qqRequests, modelGuard, mediaJobs,
     WORKSPACE_ROOT:typeof WORKSPACE_ROOT==='undefined'?path.join(ROOT,'workspace'):WORKSPACE_ROOT,MEMORY_FILE:typeof MEMORY_FILE==='undefined'?memoryBook.file:MEMORY_FILE,resolveOutboxPath,drawImage,processMediaJob,runMediaJob, handleGuestPhoto, outTarget, dailyQuota, isRegisteredReminder,
     learnerWaiters,internalPurposes,socialPublisher,publishSocial,isResetRequest,requestSessionReset,pumpResetRequests,resetRequests,isScheduledSession,isCurrentSession,reverse,safeResetSession,sessionHandoffs,groupPolicies,groupAuthority,assertGroupMedia,handleOwnerGroupCommand,syncGroupMembership,updateGroupMembership,memoryBook,currentMechanismFacts,caps,work,rosterUpdate,capabilityKeys,capabilityRole,handleCapabilityCommand,handleCompanionActions,queueCharacterPhoto,collectCurrentSticker,sendCurrentSticker,runMemoPrompt,
-    buildInboundNote, extractFaceImage,
+    buildInboundNote, extractFaceImage, clearGroupAttention, getGroupAdmissionEpoch() { return groupAdmissionEpoch; },
     tickReminders, reminderPermits,
     testMemo(result) { api.sessions.prompt = async(params)=> { const waiters=learnerWaiters.get(params.sessionId); if(waiters?.length) { const w=waiters.shift();clearTimeout(w.timer); if(typeof result==='object' && result?.message) w.reject(result);else w.resolve(result); } return {result:{ok:true,value:{}}}; }; },
-    shortChain,reminderLedger,modelLanes,taskProgress,orchestrator,handleUrgentStop,deliverTaskResult,sendEpochs,applyOrchestrationRoster,applyOwnerMaintenance,applyOwnerMaintenanceControl,observeOrchestratorFrame,applyOrchestrationActions,runServiceVoicePrompt,sayBridge,pendingResetMeaning,readConversationPersona, splitChatSegments, sendToQQ, sendStickerV2, sendCurrentSticker, syncStickerLibrary, handleIncoming, startConsoleServer, cfg, state, api, promptQueues,
+    shortChain,reminderLedger,modelLanes,taskProgress,orchestrator,handleUrgentStop,deliverTaskResult,sendEpochs,applyOrchestrationRoster,applyOwnerMaintenance,applyOwnerMaintenanceControl,observeOrchestratorFrame,applyOrchestrationActions,runServiceVoicePrompt,sayBridge,pendingResetMeaning,readConversationPersona, splitChatSegments, sendToQQ, sendStickerV2, sendCurrentSticker, syncStickerLibrary, handleIncoming, startConsoleServer, groupFollowupScopeForKey, groupFollowupScopeForToken, isGroupFollowupScopeActive, groupFollowupTurnEvent, clearGroupFollowupScopes, cfg, state, api, promptQueues,
     getSocialV2State, appendSocialV2Message, recordSentMessagesV2,
-    buildWakePromptV2, buildWakeSnapshotV2, sendWakePromptV2, socialV2,
+    buildWakePromptV2, buildWakeSnapshotV2, sendWakePromptV2, evaluateWakeTriggerV2, scheduleWakeV2, scheduleReplyCheckV2, scheduleProactiveCheckV2, handlePokeNotice, pendingWakeKeys, socialV2,
     refreshMode, modeAllowed, trackTurnEvent, replayPendingWakeReasonsV2,
     collectors, setupSleepTimerV2,
     getInitialPrompt, setInitialPrompt, loadInitialPrompts, formatInitialPromptV2,
@@ -192,10 +193,10 @@ export async function bridgeHarness({ config = {}, savedState, files = {}, globa
       selfUserId = String(id ?? '');
       selfNickname = selfDisplayName.toLowerCase() || 'deepseek';
     },
-    canReplayGroupMessage,queued,enqueueForRetry,flushQueue, retireSession,
+    isGuestGroupCalled,canReplayGroupMessage,queued,enqueueForRetry,flushQueue, retireSession,
     voiceCfg, voiceLibrary, resolveVoicePathForV2, resolveVoicePathForOperator,
     voiceBudgetCheck, sendVoiceV2, sendVoiceForV2, assertOutboundAuditOk,
-    setMode(value,preset) { currentMode = value;if(preset)closedAgentPreset=preset; },
+    setMode(value,preset) { if(currentMode!==value){currentMode=value;groupAdmissionEpoch+=1;clearGroupAttention();}if(preset)closedAgentPreset=preset; },
     setReady(value) { dshReady = value; },
     setPresets(value) { dshPresetIds = value; dshDefaultPreset = 'standard'; },
     resetEpoch() { sessionEpoch++; },
@@ -217,7 +218,7 @@ export async function bridgeHarness({ config = {}, savedState, files = {}, globa
     SnowLumaWebSocketClient: FakeBot, text: (s) => s,
     discoverDshLaunchToken: () => '', unwrap, createTurnCollector,
     ...markdown, ...sensitive, ...wait, ...safeFetch, ...forward, ...slang, ...sticker,
-    ...modelPrices, ...tokenLedger, ...voiceLib, ...stateAcl, ...presetPrompt, ...reliability, ...roleCard, ...capabilities, ...memoryBookLib, ...groupContextLib, ...taskProgressLib, ...imageDownloadLib, ...imageResultLib, ...progressNarratorLib, ...outboxLib, ...memoryQueueLib, ...episodicStoreLib, ...episodicRetrievalLib, ...episodicConsolidatorLib, ...temporalLib, ...invocationLib, ...parallelDownloadLib, ...companionGateLib, ...socialPublishingLib,
+    ...modelPrices, ...tokenLedger, ...voiceLib, ...stateAcl, ...presetPrompt, ...reliability, ...roleCard, ...capabilities, ...memoryBookLib, ...groupContextLib, ...groupMentionLib, ...taskProgressLib, ...imageDownloadLib, ...imageResultLib, ...progressNarratorLib, ...outboxLib, ...memoryQueueLib, ...episodicStoreLib, ...episodicRetrievalLib, ...episodicConsolidatorLib, ...temporalLib, ...invocationLib, ...parallelDownloadLib, ...companionGateLib, ...socialPublishingLib,
     QqRequestService,buildConversationPersona,CONVERSATION_STYLE,...dshProtocolLib,...accessPolicyLib,...operationDeadlineLib,...reminderLib,...photoDeliveryLib,submitImageTask:async()=>{throw Error('Fixture image submission requires an explicit test transport');},...imagePlanLib,...chainLib,Orchestrator,OwnerMaintenanceBroker,stopIntent,taskCanDeliver,parseAgentObject,classifyModelError,
     ...serviceVoiceLib,composeServiceReply:async ({facts})=>facts.text,
     TaskProgress: class extends taskProgressLib.TaskProgress { constructor(file,options){super(file,{...options,render:async(j,facts)=>j.stage||JSON.stringify(facts)});} },
@@ -252,7 +253,7 @@ export async function bridgeHarness({ config = {}, savedState, files = {}, globa
   for(const name of fs.readdirSync(path.join(root,'src/features')).filter(x=>x.endsWith('.mjs'))){
     const feature=fs.readFileSync(path.join(root,'src/features',name),'utf8');
     const factory=feature.match(/export function (create\w+)\(/)[1];
-    const body=feature.replaceAll('/root/workspace',path.join(temp,'workspace').replaceAll('\\','/')).replaceAll('/root/.dsh',path.join(temp,'dsh').replaceAll('\\','/')).replace(/^export const dependencies=.*;\r?\n/m,'').replace(/^export /gm,'');
+    const body=feature.replace(/^import \{isExplicitSelfMention\} from ['\"]\.\.\/group-mention\.mjs['\"];\r?\n/gm,'').replaceAll('/root/workspace',path.join(temp,'workspace').replaceAll('\\','/')).replaceAll('/root/.dsh',path.join(temp,'dsh').replaceAll('\\','/')).replace(/^export const dependencies=.*;\r?\n/m,'').replace(/^export /gm,'');
     context[factory]=vm.runInContext('(()=>{'+body+';return '+factory+';})()',context);
   }
   vm.runInContext(source + '\nglobalThis.auditReady = main();', context);

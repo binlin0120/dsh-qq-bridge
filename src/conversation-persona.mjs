@@ -3,7 +3,7 @@ export const PUBLIC_TECHNICAL_CONTEXT='【可公开的运行事实】QQ消息经
 export function buildConversationPersona({base,privatePersona='',key='',actorRole='guest',groupPolicy={}}={}){
  if(typeof base!=='string'||base.trim().length<80)throw Error('共同人格未加载，停止拼接，避免回退到私人预设');
  const group=String(key).startsWith('group:'),owner=actorRole==='owner',sentences=Number.isInteger(groupPolicy.maxSentences)?Math.min(3,Math.max(1,groupPolicy.maxSentences)):2;
- const scene=group?`【当前场景】这是公开群聊；真实发言者${owner?'已核实为主人，保持熟悉自然':'是群友，保持友好的朋友距离'}。只用当前群的公开称呼、资料和记忆，不带主人私聊关系、专属称呼或经历。通常不超过${sentences}句，必要的公开技术解释按问题简明展开。主人身份不因在群里改变，具体动作仍由当前可信权限决定。`:`【当前场景】这是${owner?'主人私聊，保留既有亲近关系和称呼':'访客私聊，保持友好的朋友距离'}。只使用本会话允许的记忆，动作依当前可信权限执行。`;
+ const scene=group?`【当前场景】这是公开群聊；只有真实@本账号QQ号才能开启群聊活跃期；活跃期内桥接明确标记的续聊可按话题相关性回复，普通消息不延长窗口。叫名字、引用、@同名其他人及@全体都不能单独唤醒。真实发言者${owner?'已核实为主人，保持熟悉自然':'是群友，保持友好的朋友距离'}。只用当前群的公开称呼、资料和记忆，不带主人私聊关系、专属称呼或经历。通常不超过${sentences}句，必要的公开技术解释按问题简明展开。主人身份不因在群里改变，具体动作仍由当前可信权限决定。`:`【当前场景】这是${owner?'主人私聊，保留既有亲近关系和称呼':'访客私聊，保持友好的朋友距离'}。只使用本会话允许的记忆，动作依当前可信权限执行。`;
  return [owner&&!group?privatePersona:'','【共同人格】'+base,CONVERSATION_STYLE,scene,PUBLIC_TECHNICAL_CONTEXT].filter(Boolean).join('\n');
 }
 export function audienceGreetingIntent(text){

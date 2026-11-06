@@ -1,5 +1,6 @@
 // groups: explicit live dependencies preserve shared state and authority boundaries.
-export const dependencies=["caps","cfg","currentMode","extractMediaFromSegments","fetchOneBotImage","fs","groupAuthority","groupPolicies","guestRate","isOwnerKey","log","mediaIntent","mediaJobs","noteGuestChat","noteOwnerChat","oneBotCall","outTarget","ownerGroupActionQueues","parseMemoObject","publicGroupPolicy","qqRequests","queueCharacterPhoto","runMemoPrompt","saveQqRequests","sayBridge","scrubPrivate","selfNickname","selfUserId","sendCurrentSticker","sendImageTo","validateImage"];
+import {isExplicitSelfMention} from '../group-mention.mjs';
+export const dependencies=["caps","cfg","currentMode","extractMediaFromSegments","fetchOneBotImage","fs","groupAdmissionEpoch","groupAuthority","groupPolicies","guestRate","isOwnerKey","log","mediaIntent","mediaJobs","noteGuestChat","noteOwnerChat","oneBotCall","outTarget","ownerGroupActionQueues","parseMemoObject","publicGroupPolicy","qqRequests","queueCharacterPhoto","runMemoPrompt","saveQqRequests","sayBridge","scrubPrivate","selfNickname","selfUserId","sendCurrentSticker","sendImageTo","validateImage"];
 export function createGroups(deps){
 async function assertGroupMedia(auth,target,action) {
     deps.groupAuthority.assert(auth,target,action);
@@ -36,7 +37,7 @@ async function handleOwnerGroupCommand(key,text,event,{member=false,addressed=fa
     if(member&&(isOwner||!key.startsWith('group:')||!addressed))return false;
     if(Array.isArray(event.message))text=event.message.filter(x=>x.type==='text').map(x=>String(x.data?.text||'')).join('').trim();
     const inGroup=key.startsWith('group:');
-    if(inGroup&&!(addressed||isGuestGroupCalled(text,event)||/^(?:\/群发|\/群规则)/.test(text)))return false;
+    if(inGroup&&!isGuestGroupCalled(text,event))return false;
     const ruleRequest=key.startsWith('private:')&&(/\/群规则|(?:群|官方群).*(?:少说话|简短|被叫再回|不.{0,3}表情|别.{0,3}表情|允许.*表情|恢复.*表情)/.test(text));
     const action=deps.mediaIntent(text);
     const wantsNewPhoto=/重拍|重新拍|新拍|拍一张新的|再拍一张/.test(String(text).replace(/(?:不要|别|不用|不必|禁止|不许)\s*(?:再|又)?(?:重新拍|重拍|新拍|拍一张新的|再拍一张)/g,''));
@@ -93,20 +94,19 @@ function guestRateOk(key) {
     return true;
   }
 
-// 群里是否在叫她：@她、叫名字（鲸鲸/大肥鱼/当前 QQ 昵称）。引用她的消息在调用处单独判断。
+// A group call must explicitly mention the logged-in account's QQ ID.
   function isGuestGroupCalled(plainContent, event) {
-    const lower = String(plainContent ?? '').toLowerCase();
-    if(Array.isArray(event?.message)&&event.message.some(x=>x.type==='at'&&String(x.data?.qq)===String(deps.selfUserId||event.self_id)))return true;
-    const selfId = String(event?.self_id ?? '');
-    if (selfId && lower.includes('@' + selfId)) return true;
-    if (deps.selfNickname && (lower.includes('@' + deps.selfNickname) || lower.includes(deps.selfNickname))) return true;
-    for (const name of (deps.cfg.guest?.groupCallNames ?? ['鲸鲸', '大肥鱼'])) {
-      if (name && lower.includes(String(name).toLowerCase())) return true;
-    }
-    return false;
+    return isExplicitSelfMention(event, deps.selfUserId);
   }
 
-function canReplayGroupMessage(key,admission){if(deps.currentMode!=='closed-agent'||!key.startsWith('group:'))return true;return !!(admission&&admission.key===key&&admission.sourceId&&(admission.quoteTargetIsSelf||isGuestGroupCalled(admission.text,admission.event)));}
+function canReplayGroupMessage(key,admission){
+    if(!key.startsWith('group:'))return true;
+    if(!admission||admission.key!==key||!admission.sourceId)return false;
+    if(!Number.isSafeInteger(admission.modeEpoch)||admission.modeEpoch!==deps.groupAdmissionEpoch)return false;
+    if(!isGuestGroupCalled('',admission.event))return false;
+    if(admission.followup!==true)return true;
+    return Number.isFinite(admission.activeUntil)&&admission.activeUntil>Date.now();
+  }
 
 async function syncGroupMembership(){
     if(!deps.qqRequests.some(r=>r.type==='group'&&r.status!=='joined'))return;

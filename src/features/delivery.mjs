@@ -386,7 +386,7 @@ function computeGapsV2(messages, gapMode, gapMs, gaps, sendCfg) {
     return delays;
   }
 
-function sendMessagesV2(key, messages, delays, replyToMessageId, atUserId = null, messageIds = []) {
+function sendMessagesV2(key, messages, delays, replyToMessageId, atUserId = null, messageIds = [], sendGuard = null) {
     const assertSendAllowed = captureSendGuard(key);
     const [kind, id] = key.split(':');
     const sent = [];
@@ -398,6 +398,7 @@ function sendMessagesV2(key, messages, delays, replyToMessageId, atUserId = null
       deps.sendChain = deps.sendChain
         .then(async () => {
           assertSendAllowed();
+          if (sendGuard) sendGuard();
           const receipt=await onebotSend(kind, id, msg, useReply, useAt);
           if(receipt?.message_id!==undefined&&receipt.message_id!==null)messageIds.push(receipt.message_id);
           sent.push(msg);
@@ -415,6 +416,7 @@ function sendMessagesV2(key, messages, delays, replyToMessageId, atUserId = null
       if (failed.length > 0) {
         const err = new Error(`QQ 发送失败 ${failed.length}/${messages.length} 条：${failed[0]?.message ?? '未知错误'}`);
         err.sent = sent.slice();
+        if (Number.isInteger(failed[0]?.statusCode)) err.statusCode = failed[0].statusCode;
         throw err;
       }
       return sent;

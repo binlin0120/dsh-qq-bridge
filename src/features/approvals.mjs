@@ -86,6 +86,7 @@ export function createApprovals(deps){
     if (!event || event.sub_type !== 'poke') return;
     const selfId = event.self_id;
     const groupId = event.group_id ?? event.groupId ?? null;
+    if (groupId != null) return; // Group poke is not an explicit @ of this account.
     const senderIdRaw = event.sender_id ?? event.user_id ?? event.sender?.user_id ?? null;
     const targetIdRaw = event.target_id ?? event.targetId ?? null;
     const senderId = senderIdRaw != null ? String(senderIdRaw) : '';

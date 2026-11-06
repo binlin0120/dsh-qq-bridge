@@ -230,15 +230,15 @@ await test('手动唤醒在会话未 bootstrap 时必须走 bootstrap（否则�
   const h = await bridgeHarness();
   try {
     h.setMode('reserved2');
-    h.setInitialPrompt('group:456', ENV_TEXT);
+    h.setInitialPrompt('private:123', ENV_TEXT);
     await withServer(h, async (port) => {
-      const first = await call(port, '/api/socialV2/wake', { method: 'POST', headers: ADMIN, body: { key: 'group:456', reason: 'admin' } });
+      const first = await call(port, '/api/socialV2/wake', { method: 'POST', headers: ADMIN, body: { key: 'private:123', reason: 'admin' } });
       assert.equal(first.status, 200);
       assert.equal(first.json.reason, 'bootstrap', '首次唤醒必须走 bootstrap');
       assert.equal(first.json.firstWake, true);
       assert.equal(first.json.requestedReason, 'admin', '仍回显操作者请求的原因');
 
-      const second = await call(port, '/api/socialV2/wake', { method: 'POST', headers: ADMIN, body: { key: 'group:456', reason: 'admin' } });
+      const second = await call(port, '/api/socialV2/wake', { method: 'POST', headers: ADMIN, body: { key: 'private:123', reason: 'admin' } });
       assert.equal(second.status, 200);
       assert.equal(second.json.reason, 'admin', '已 bootstrap 过则保持原原因');
       assert.equal(second.json.firstWake, false);
@@ -263,10 +263,14 @@ await test('端到端：群消息进线触发的首次唤醒，投递给 DSH 的
       self_id: 999,
       user_id: 123,
       message_id: 4242,
-      message: [{ type: 'text', data: { text: '大家好' } }],
+      message: [{ type: 'at', data: { qq: '999' } }, { type: 'text', data: { text: '大家好' } }],
       raw_message: '大家好',
       sender: { nickname: '测试群友', card: '测试群友' }
     };
+    const unmentioned = { ...event, message_id: 4241, message: [{ type: 'text', data: { text: '大家好' } }] };
+    await h.handleIncoming('group', '456', unmentioned, h.cfg);
+    assert.equal(h.calls.prompts.length, 0, '没有真实@本人时不得触发 bootstrap 或模型唤醒');
+    assert.equal(h.getSocialV2State('group:456').bootstrapSent, false, '无@消息不得消耗首次引导状态');
     await h.handleIncoming('group', '456', event, h.cfg);
     for (let i = 0; i < 100 && !h.calls.prompts.length; i += 1) await new Promise((resolve) => setTimeout(resolve, 50));
     assert.equal(h.calls.prompts.length, 1, '首条消息应触发恰好一次 bootstrap 唤醒');
@@ -275,7 +279,7 @@ await test('端到端：群消息进线触发的首次唤醒，投递给 DSH 的
     assert.ok(delivered.includes(ENV_TEXT), 'bootstrap prompt 必须带操作者预写的环境说明');
 
     // 第二条消息（非首次唤醒）不得再注入
-    const second = { ...event, message_id: 4243, message: [{ type: 'text', data: { text: '有没有人在' } }], raw_message: '有没有人在' };
+    const second = { ...event, message_id: 4243, message: [{ type: 'at', data: { qq: '999' } }, { type: 'text', data: { text: '有没有人在' } }], raw_message: '有没有人在' };
     await h.handleIncoming('group', '456', second, h.cfg);
     for (let i = 0; i < 100 && h.calls.prompts.length < 2; i += 1) await new Promise((resolve) => setTimeout(resolve, 50));
     if (h.calls.prompts.length >= 2) {

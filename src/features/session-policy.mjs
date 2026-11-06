@@ -1,5 +1,5 @@
 // session-policy: explicit live dependencies preserve shared state and authority boundaries.
-export const dependencies=["DSH_CONTROL_TIMEOUT_MS","STATE_DIR","activeWaits","allowed","api","cancelPendingEntry","cancelSocialTimers","cfg","clearSocialV2Timers","clearTimeout","closedAgentPreset","collectors","crypto","currentMode","disarmPendingWakeLease","dshDefaultPreset","dshPresetIds","feedbackTimes","guestCheckFailed","isOwnerKey","lastSendFailed","log","markReadCalledKeys","modelAppliedSessions","normalizeModeInput","normalizeOwnerQQ","path","pending","pendingSendToolCalls","pendingWakeKeys","queuedHintAt","readJsonSafe","rememberAgentToken","reverse","rosterRoleOf","runtimeStopping","saveSocialV2State","saveState","sendToolSucceededSessions","sessionModels","settingFromDshNamespace","slangSubmitTimes","social","socialV2","state","toolCallNames","turnLeaseNoted","unwrap","v2TurnStartAt","wakeConfigMissCount","wakeConfigUpdatedKeys","withTimeout"];
+export const dependencies=["DSH_CONTROL_TIMEOUT_MS","STATE_DIR","activeWaits","allowed","api","cancelPendingEntry","cancelSocialTimers","cfg","clearGroupFollowupScopes","clearSocialV2Timers","clearTimeout","closedAgentPreset","collectors","crypto","currentMode","disarmPendingWakeLease","dshDefaultPreset","dshPresetIds","feedbackTimes","guestCheckFailed","isOwnerKey","lastSendFailed","log","markReadCalledKeys","modelAppliedSessions","normalizeModeInput","normalizeOwnerQQ","path","pending","pendingSendToolCalls","pendingWakeKeys","queuedHintAt","readJsonSafe","rememberAgentToken","reverse","rosterRoleOf","runtimeStopping","saveSocialV2State","saveState","sendToolSucceededSessions","sessionModels","settingFromDshNamespace","slangSubmitTimes","social","socialV2","state","toolCallNames","turnLeaseNoted","unwrap","v2TurnStartAt","wakeConfigMissCount","wakeConfigUpdatedKeys","withTimeout"];
 export function createSessionPolicy(deps){
 // 从 DSH settings 读取桥接模式；命名空间未注册时回退本地 state/mode.json
   async function refreshMode() {
@@ -175,6 +175,7 @@ function isCurrentSession(key, sessionId) {
 
 function retireSession(key) {
     const sessionId = deps.state.sessions[key];
+    deps.clearGroupFollowupScopes(key);
     delete deps.state.sessions[key];
     delete deps.state.sessionPolicies[key];
     // 按 key 记账的内存态在**有映射和无映射时都要清**：一条被移出白名单、

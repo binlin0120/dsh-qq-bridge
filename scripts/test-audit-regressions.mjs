@@ -126,10 +126,10 @@ await test('R3 命中唤醒限频时安排延后重试，不丢这一枪', async
   const h = await bridgeHarness({ config: { socialV2: { wake: { maxWakePerMinute: 1 } } } });
   try {
     h.setMode('reserved2');
-    const st = h.getSocialV2State('group:456');
+    const st = h.getSocialV2State('private:123');
     st.wakeTimes.push(Date.now()); // 占满每分钟 1 次的窗口
     const before = h.calls.prompts.length;
-    await h.sendWakePromptV2('group:456', 'timeout');
+    await h.sendWakePromptV2('private:123', 'timeout');
     assert.equal(h.calls.prompts.length, before, '限频期间不得立即投递');
     assert.ok(st.rateLimitRetryTimer, '必须安排延后重试（直接丢弃会让 timeout 唤醒永久消失）');
     clearTimeout(st.rateLimitRetryTimer);
@@ -142,7 +142,7 @@ await test('R4 timeout/replyCheck 类暂存唤醒按定时器语义补发', asyn
   const h = await bridgeHarness({ config: { socialV2: { proactive: { enabled: false } } } });
   try {
     h.setMode('reserved2');
-    const st = h.getSocialV2State('group:456');
+    const st = h.getSocialV2State('private:123');
     // 模拟「回合结束、未读已全部标读」，队列里留着一条到期的 timeout 与一条已经处理过的 @
     st.unread = [];
     st.lastUnreadSeq = 1;
@@ -150,7 +150,7 @@ await test('R4 timeout/replyCheck 类暂存唤醒按定时器语义补发', asyn
     st.wakeConfig.infinite = false;
     st.wakeConfig.sleepUntil = new Date(Date.now() - 1000).toISOString();
 
-    const result = h.replayPendingWakeReasonsV2('group:456');
+    const result = h.replayPendingWakeReasonsV2('private:123');
     assert.equal(result?.action, 'timer', 'timeout 必须走定时器补偿，而不是按未读判断');
     // 到期定时器被补偿后应立即补一次 timeout 唤醒
     for (let i = 0; i < 40 && !h.calls.prompts.length; i += 1) await sleep(25);
@@ -159,7 +159,7 @@ await test('R4 timeout/replyCheck 类暂存唤醒按定时器语义补发', asyn
     assert.match(text, /有限潜水时间已到|睡眠时间已到/);
 
     // 第二条 @ 与未读无关但对应消息已被处理 → 仍然按消息语义跳过
-    const second = h.replayPendingWakeReasonsV2('group:456');
+    const second = h.replayPendingWakeReasonsV2('private:123');
     assert.equal(second?.action, 'skipped', '已被当前回合处理的消息类唤醒仍然跳过');
   } finally { await h.close(); }
 });
